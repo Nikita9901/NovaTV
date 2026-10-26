@@ -152,6 +152,50 @@ export default function Browser({ onBack, say }) {
     }
   };
 
+  // Физическая клавиатура: символы идут в адресную строку или в поле на странице (раскладка любая, берём то, что набрано)
+  const kbRef = useRef();
+  const lastTyped = useRef(0); // когда последний раз печатали с физической клавиатуры
+  kbRef.current = { addr, field, typeChar, backspace, enter };
+  useEffect(() => {
+    const onKey = (e) => {
+      const k = kbRef.current;
+      if (e.ctrlKey || e.metaKey || e.altKey) {
+        if ((e.key === 'v' || e.key === 'м') && e.ctrlKey && (k.addr !== null || k.field)) {
+          e.preventDefault();
+          navigator.clipboard.readText().then((t) => t && k.typeChar(t.trim())).catch(() => {});
+        }
+        return;
+      }
+      const printable = e.key.length === 1 && e.key !== ' ';
+      const typing = k.addr !== null || k.field;
+      if (!typing && !printable) return;
+      if (e.key === 'Backspace') {
+        e.preventDefault();
+        lastTyped.current = Date.now();
+        k.backspace();
+      } else if (e.key === 'Enter' && typing && Date.now() - lastTyped.current < 5000) {
+        // Enter сразу после набора — отправить; иначе он нажимает выбранную клавишу, как обычно
+        e.preventDefault();
+        k.enter();
+      } else if (e.key === ' ' && typing && Date.now() - lastTyped.current < 5000) {
+        e.preventDefault();
+        lastTyped.current = Date.now();
+        k.typeChar(' ');
+      } else if (printable) {
+        e.preventDefault();
+        lastTyped.current = Date.now();
+        if (!typing) {
+          // начали печатать на стартовой странице или на панели — это адрес
+          setField(null);
+          setToolbar(false);
+          setAddr(e.key);
+        } else k.typeChar(e.key);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   const sites = [...marks.map((m) => ({ ...m, color: '#6a4bf0' })), ...SITES];
 
   return (
@@ -191,7 +235,7 @@ export default function Browser({ onBack, say }) {
       {st.open && st.loading && <div className="loadbar" />}
 
       {!st.open && (
-        <div className="start">
+        <div className="start" inert={osk || undefined}>
           <h2>
             <Icon name="globe" /> Быстрый доступ
           </h2>
