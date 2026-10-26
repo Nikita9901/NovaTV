@@ -62,8 +62,17 @@ jobs:
           git checkout -- lib pubspec.yaml analysis_options.yaml
           node tool/setup.js
           flutter pub get
-          flutter build apk --release
+          # Постоянный ключ подписи берём из секретов репозитория (без него APK получит случайный отладочный ключ)
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/novatv.jks"
+            export NOVATV_KEYSTORE="$RUNNER_TEMP/novatv.jks"
+          fi
+          flutter build apk --release --build-name="${GITHUB_REF_NAME#v}" --build-number="$GITHUB_RUN_NUMBER"
           mv build/app/outputs/flutter-apk/app-release.apk ../NovaTV-Remote-${{ github.ref_name }}.apk
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          NOVATV_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          NOVATV_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
       - uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
