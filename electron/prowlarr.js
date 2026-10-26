@@ -277,6 +277,40 @@ async function testIndexer(id) {
   await call('POST', '/indexer/test', cur, 60_000);
 }
 
+// ---------- Автоматическая настройка при первом запуске ----------
+// Публичные трекеры, которые работают без аккаунта: два русских (озвучки) и три международных
+const DEFAULT_TRACKERS = ['rutor', 'noname-club', 'thepiratebay', 'yts', 'eztv'];
+
+async function autosetup() {
+  const push = (pct, text) => notify('prowlarr:progress', { pct, text });
+  deps.patchSettings({ prowlarrBuiltin: true });
+  if (!installed()) await install();
+  push(92, 'Запускаем Prowlarr…');
+  await start();
+
+  push(94, 'Добавляем трекеры…');
+  const have = new Set((await indexers()).map((i) => i.definitionName.toLowerCase()));
+  const catalogList = await schemas();
+  const results = [];
+  for (const [i, def] of DEFAULT_TRACKERS.entries()) {
+    const item = catalogList.find((s) => s.definitionName.toLowerCase() === def);
+    const name = item?.name || def;
+    if (have.has(def)) {
+      results.push({ name, ok: true });
+      continue;
+    }
+    push(94 + Math.round(((i + 1) / DEFAULT_TRACKERS.length) * 5), `Добавляем: ${name}`);
+    try {
+      await addIndexer({ definitionName: item?.definitionName || def });
+      results.push({ name, ok: true });
+    } catch (e) {
+      results.push({ name, ok: false, error: e.message });
+    }
+  }
+  push(100, 'Готово');
+  return results;
+}
+
 // ---------- Состояние для окна настроек ----------
 async function status() {
   const s = deps.loadSettings();
@@ -304,6 +338,7 @@ function register(d) {
   };
   ipcMain.handle('prowlarr:status', wrap(status));
   ipcMain.handle('prowlarr:install', wrap(install));
+  ipcMain.handle('prowlarr:autosetup', wrap(autosetup));
   ipcMain.handle('prowlarr:start', wrap(start));
   ipcMain.handle('prowlarr:stop', wrap(async () => stop()));
   ipcMain.handle('prowlarr:indexers', wrap(indexers));

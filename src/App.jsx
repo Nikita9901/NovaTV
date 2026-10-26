@@ -3,6 +3,7 @@ import { move, activate } from './nav.js';
 import { startGamepad } from './gamepad.js';
 import Movies from './Movies.jsx';
 import Settings from './Settings.jsx';
+import Setup from './Setup.jsx';
 import ErrorBoundary from './ErrorBoundary.jsx';
 import { Icon } from './icons.jsx';
 import { sfx, soundsEnabled, setSounds } from './sounds.js';
@@ -55,6 +56,11 @@ export default function App() {
     clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(null), 2200);
   };
+
+  // Первый запуск: мастер настройки
+  useEffect(() => {
+    window.tv?.getSettings?.()?.then((r) => r?.ok && r.data.setupDone === false && setScreen('setup')).catch(() => {});
+  }, []);
 
   const trailerRef = useRef(false); // YouTube открыт ради трейлера (вернуться на экран фильма, а не на главную)
 
@@ -132,7 +138,11 @@ export default function App() {
       <div className="ambient" />
       <main className="app">
         <ErrorBoundary resetKey={screen} onReset={() => setScreen('home')}>
-        {screen === 'movies' ? (
+        {screen === 'setup' ? (
+          <div className="screen-wrap" key="setup">
+            <Setup onDone={() => setScreen('home')} say={say} />
+          </div>
+        ) : screen === 'movies' ? (
           <div className="screen-wrap" key="movies">
             <Movies
               onBack={() => setScreen('home')}

@@ -10,6 +10,7 @@ const DEFAULTS = {
   kinopoiskToken: '',
   prowlarrUrl: 'http://127.0.0.1:9696',
   prowlarrKey: '',
+  setupDone: false, // пройден ли мастер первого запуска
   prowlarrBuiltin: false, // искать через встроенный Prowlarr (скачивается и запускается самим приложением)
   audioLang: 'rus', // предпочитаемая звуковая дорожка: rus / eng / пусто — первая
   maxHeight: 1080, // потолок разрешения при перекодировании
@@ -22,11 +23,17 @@ const DEFAULTS = {
   downloadDir: '', // куда качать раздачи; пусто — временная папка (нужно много места: фильм 1080p ≈ 10 ГБ, 4K ≈ 30–80 ГБ)
 };
 
+// Куда качать по умолчанию. В Windows это временная папка; на Linux «tmp» часто лежит в оперативной памяти
+// и мал для фильмов, а на macOS её чистит система, поэтому там берём папку данных приложения.
+const defaultDownloads = () => (process.platform === 'win32' ? app.getPath('temp') : path.join(app.getPath('userData'), 'cache'));
+
 const settingsFile = () => path.join(app.getPath('userData'), 'settings.json');
 
 function loadSettings() {
   try {
-    return { ...DEFAULTS, ...JSON.parse(fs.readFileSync(settingsFile(), 'utf8')) };
+    const saved = JSON.parse(fs.readFileSync(settingsFile(), 'utf8'));
+    if (!('setupDone' in saved)) saved.setupDone = true; // файл остался от прошлой версии: мастер не нужен
+    return { ...DEFAULTS, ...saved };
   } catch {
     // Первый запуск: сразу предлагаем встроенный Prowlarr, чтобы всё работало без отдельной установки
     const fresh = { ...DEFAULTS, prowlarrBuiltin: true };
@@ -487,6 +494,7 @@ const SCHEMA = {
   prowlarrUrl: 'string',
   prowlarrKey: 'string',
   prowlarrBuiltin: 'boolean',
+  setupDone: 'boolean',
   downloadDir: 'string',
   audioLang: 'string',
   maxHeight: 'number',
@@ -510,7 +518,7 @@ function patchSettings(patch) {
 
 // Свободное место на диске, где лежит папка (папки может ещё не быть — идём вверх до существующей)
 async function diskInfo(dir) {
-  let p = path.resolve(dir || app.getPath('temp'));
+  let p = path.resolve(dir || defaultDownloads());
   while (!fs.existsSync(p) && path.dirname(p) !== p) p = path.dirname(p);
   const s = await fs.promises.statfs(p);
   return { free: s.bavail * s.bsize, total: s.blocks * s.bsize, path: p };
@@ -518,7 +526,7 @@ async function diskInfo(dir) {
 
 function registerApi() {
   loadSettings(); // создаст settings.json при первом запуске
-  prowlarr.register({ loadSettings });
+  prowlarr.register({ loadSettings, patchSettings });
   ipcMain.handle('movies:search', wrap(searchMovies));
   ipcMain.handle('torrents:search', wrap(searchTorrents));
   ipcMain.handle('movies:get', wrap(movieById));
@@ -566,4 +574,4 @@ function registerApi() {
   ipcMain.on('settings:open', () => shell.openPath(settingsFile()));
 }
 
-module.exports = { registerApi, loadSettings };
+module.exports = { registerApi, loadSettings, defaultDownloads };

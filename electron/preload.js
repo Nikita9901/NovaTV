@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('tv', {
   prowlarr: {
     status: () => ipcRenderer.invoke('prowlarr:status'),
     install: () => ipcRenderer.invoke('prowlarr:install'),
+    autosetup: () => ipcRenderer.invoke('prowlarr:autosetup'),
     start: () => ipcRenderer.invoke('prowlarr:start'),
     stop: () => ipcRenderer.invoke('prowlarr:stop'),
     indexers: () => ipcRenderer.invoke('prowlarr:indexers'),

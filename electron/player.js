@@ -16,7 +16,7 @@ const { spawn, execFileSync } = require('child_process');
 const loopDelay = monitorEventLoopDelay({ resolution: 10 });
 loopDelay.enable();
 const { app, ipcMain } = require('electron');
-const { loadSettings } = require('./api');
+const { loadSettings, defaultDownloads } = require('./api');
 const { pickEpisode, parseFile } = require('./release');
 const ffmpegPath = require('ffmpeg-static').replace('app.asar', 'app.asar.unpacked');
 
@@ -38,7 +38,7 @@ const gb = (n) => `${(n / 1e9).toFixed(1)} ГБ`;
 // Папка кэша — только наша: чистим её при старте и после просмотра.
 function cacheDir() {
   const custom = loadSettings().downloadDir?.trim();
-  return path.join(custom || app.getPath('temp'), 'google-tv-torrents');
+  return path.join(custom || defaultDownloads(), 'google-tv-torrents');
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

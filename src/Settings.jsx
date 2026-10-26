@@ -302,7 +302,7 @@ export default function Settings({ onBack, say }) {
             options={HEIGHTS}
             onChange={(v) => save({ maxHeight: v })}
           />
-          {display && (
+          {display && display.hz > 0 && (
             <div className={`srow info ${smoothFor24(display.hz) ? '' : 'warn'}`}>
               <span className="stext">
                 <b>Частота обновления экрана</b>
@@ -369,7 +369,7 @@ export default function Settings({ onBack, say }) {
           <div className="srow disk">
             <span className="stext">
               <b>Папка загрузок</b>
-              <small>{s.downloadDir || 'Временная папка Windows (на системном диске может не хватить места)'}</small>
+              <small>{s.downloadDir || 'Папка по умолчанию (на системном диске может не хватить места)'}</small>
               {disk && (
                 <span className="diskbar">
                   <i style={{ width: `${usedPct}%` }} />
