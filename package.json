@@ -1,0 +1,82 @@
+{
+  "name": "google-tv-win",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Nova TV — домашний ТВ-интерфейс для Windows: YouTube, фильмы, сериалы, геймпад",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "concurrently -k \"vite\" \"wait-on tcp:127.0.0.1:5173 && electron . --dev\"",
+    "build": "vite build",
+    "start": "vite build && electron .",
+    "dist": "vite build && electron-builder --win",
+    "pack": "vite build && electron-builder --win --dir"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "webtorrent": "^3.0.21"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.1.2",
+    "concurrently": "^10.0.6",
+    "electron": "^45.0.0",
+    "electron-builder": "^26.18.0",
+    "vite": "^8.3.5",
+    "wait-on": "^9.5.1"
+  },
+  "productName": "Nova TV",
+  "author": "nikitichsn2",
+  "license": "MIT",
+  "build": {
+    "appId": "com.novatv.app",
+    "productName": "Nova TV",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "node_modules/ffmpeg-static/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Nova TV",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "artifactName": "NovaTV-Setup-${version}.${ext}"
+    },
+    "npmRebuild": false,
+    "extraResources": [
+      {
+        "from": "build/icon.png",
+        "to": "icon.png"
+      }
+    ],
+    "portable": {
+      "artifactName": "NovaTV-Portable-${version}.${ext}"
+    }
+  }
+}
