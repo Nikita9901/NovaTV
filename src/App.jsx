@@ -8,6 +8,7 @@ import Browser from './Browser.jsx';
 import ErrorBoundary from './ErrorBoundary.jsx';
 import { Icon } from './icons.jsx';
 import { sfx, soundsEnabled, setSounds } from './sounds.js';
+import { startRemote } from './remote.js';
 
 const TILES = [
   { id: 'youtube', title: 'YouTube', sub: 'Видео и каналы', icon: 'play', from: '#ff5a4d', to: '#a1110c' },
@@ -91,13 +92,17 @@ export default function App() {
   }, [screen]);
 
   useEffect(() => {
-    const stopPad = startGamepad((a) => {
+    // Одни и те же действия приходят от геймпада и от телефона-пульта
+    const onAction = (a) => {
       if (a === 'b') window.dispatchEvent(new Event('tv:back'));
+      else if (a === 'home') setScreen('home'); // кнопка «домой» на телефоне
       else if (document.body.dataset.player) window.dispatchEvent(new CustomEvent('tv:pad', { detail: a }));
       else if (a === 'a') activate();
       else if (['up', 'down', 'left', 'right'].includes(a)) move(a);
       else window.dispatchEvent(new CustomEvent('tv:pad', { detail: a })); // X / Y / LB / RB — для экранов
-    });
+    };
+    const stopPad = startGamepad(onAction);
+    const stopRemote = window.tv?.remote ? startRemote({ onKey: onAction }) : () => {};
 
     const onKey = (e) => {
       const dir = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' }[e.key];
@@ -136,6 +141,7 @@ export default function App() {
 
     return () => {
       stopPad();
+      stopRemote();
       window.removeEventListener('keydown', onKey);
       document.removeEventListener('click', onClick, true);
       window.removeEventListener('keydown', onSound);

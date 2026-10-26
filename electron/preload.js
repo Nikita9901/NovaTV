@@ -6,6 +6,23 @@ contextBridge.exposeInMainWorld('tv', {
   searchMovies: (query) => ipcRenderer.invoke('movies:search', query),
   getMovie: (id) => ipcRenderer.invoke('movies:get', id),
   getDetails: (id) => ipcRenderer.invoke('movies:details', id),
+  remote: {
+    status: () => ipcRenderer.invoke('remote:status'),
+    enable: (on) => ipcRenderer.invoke('remote:enable', on),
+    forget: (id) => ipcRenderer.invoke('remote:forget', id),
+    newPin: () => ipcRenderer.invoke('remote:newpin'),
+    // сообщения от телефона (курсор, клики, кнопки, текст) и изменения списка устройств
+    onMessage: (cb) => {
+      const h = (_e, m) => cb(m);
+      ipcRenderer.on('remote:msg', h);
+      return () => ipcRenderer.removeListener('remote:msg', h);
+    },
+    onChanged: (cb) => {
+      const h = () => cb();
+      ipcRenderer.on('remote:changed', h);
+      return () => ipcRenderer.removeListener('remote:changed', h);
+    },
+  },
   browser: {
     open: (url) => ipcRenderer.send('browser:open', url),
     go: (text) => ipcRenderer.send('browser:go', text),

@@ -105,6 +105,7 @@ export default function Settings({ onBack, say }) {
   const [edit, setEdit] = useState(null); // { key, label, secret }
   const [draft, setDraft] = useState('');
   const [reveal, setReveal] = useState(false);
+  const [remote, setRemote] = useState(null); // состояние сервера для телефона-пульта
   const [about, setAbout] = useState(null);
   const [update, setUpdate] = useState(null); // результат проверки обновлений
   const [checking, setChecking] = useState(false);
@@ -130,6 +131,9 @@ export default function Settings({ onBack, say }) {
 
   useEffect(() => {
     window.tv.about?.info().then(setAbout);
+    const load = () => window.tv.remote?.status().then((r) => r.ok && setRemote(r.data));
+    load();
+    return window.tv.remote?.onChanged(load);
   }, []);
 
   // Частота обновления экрана — от неё зависит плавность кино (24 кадра/с)
@@ -369,6 +373,51 @@ export default function Settings({ onBack, say }) {
             icon="back"
             onClick={() => openEdit('prowlarrKey', 'Ключ Prowlarr', true)}
           />
+        </section>
+
+        <section className="set-group">
+          <h3>Телефон-пульт</h3>
+          <Switch
+            title="Управление с телефона (Nova TV Remote)"
+            sub="Телефон работает как указка и пульт: наклон двигает курсор. Нужны телефон и компьютер в одной сети Wi-Fi"
+            on={!!s.remoteEnabled}
+            onChange={async (on) => {
+              const r = await window.tv.remote.enable(on);
+              if (r.ok) {
+                setRemote(r.data);
+                setS((cur) => ({ ...cur, remoteEnabled: on }));
+              } else say(r.error || 'Не удалось');
+            }}
+          />
+          {s.remoteEnabled && remote && (
+            <>
+              <div className="srow info">
+                <span className="stext">
+                  <b>Код для подключения нового телефона</b>
+                  <small>
+                    В приложении Nova TV Remote выберите этот компьютер ({remote.host}) и введите код. Если компьютер не нашёлся, введите адрес:{' '}
+                    {remote.addresses.length ? remote.addresses.map((a) => `${a}:${remote.port}`).join(' или ') : 'не удалось определить'}
+                  </small>
+                </span>
+                <span className="sval pin">{remote.pin.replace(/(\d{3})(\d{3})/, '$1 $2')}</span>
+              </div>
+              {remote.devices.length === 0 && <p className="hint">Телефонов пока нет. Windows при первом включении спросит про доступ к сети: разрешите для частных сетей</p>}
+              {remote.devices.map((d) => (
+                <Action
+                  key={d.id}
+                  title={d.name}
+                  sub={d.online ? 'Подключён сейчас' : 'Был подключён'}
+                  value={confirm === `rm${d.id}` ? 'Нажмите ещё раз' : 'Забыть'}
+                  icon="trash"
+                  danger={confirm === `rm${d.id}`}
+                  onClick={confirmed(`rm${d.id}`, async () => {
+                    const r = await window.tv.remote.forget(d.id);
+                    if (r.ok) setRemote(r.data);
+                  })}
+                />
+              ))}
+            </>
+          )}
         </section>
 
         <section className="set-group">

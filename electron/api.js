@@ -10,6 +10,7 @@ const DEFAULTS = {
   kinopoiskToken: '',
   prowlarrUrl: 'http://127.0.0.1:9696',
   prowlarrKey: '',
+  remoteEnabled: false, // пульт на телефоне (Nova TV Remote) включён
   setupDone: false, // пройден ли мастер первого запуска
   prowlarrBuiltin: false, // искать через встроенный Prowlarr (скачивается и запускается самим приложением)
   audioLang: 'rus', // предпочитаемая звуковая дорожка: rus / eng / пусто — первая
@@ -495,6 +496,7 @@ const SCHEMA = {
   prowlarrKey: 'string',
   prowlarrBuiltin: 'boolean',
   setupDone: 'boolean',
+  remoteEnabled: 'boolean',
   downloadDir: 'string',
   audioLang: 'string',
   maxHeight: 'number',
@@ -574,4 +576,4 @@ function registerApi() {
   ipcMain.on('settings:open', () => shell.openPath(settingsFile()));
 }
 
-module.exports = { registerApi, loadSettings, defaultDownloads };
+module.exports = { registerApi, loadSettings, patchSettings, defaultDownloads };

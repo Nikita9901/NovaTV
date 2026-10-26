@@ -13,6 +13,16 @@ let y = 300;
 let lastPadClick = 0;
 let cursor = null;
 
+// Курсор двигает телефон: берём положение из основного процесса
+ipcRenderer.on('browser:cursor', (_e, p) => {
+  x = p.x;
+  y = p.y;
+  drawCursor();
+});
+ipcRenderer.on('browser:remote-click', () => {
+  lastPadClick = Date.now();
+});
+
 ipcRenderer.on('browser:mode', (_e, m) => {
   mode = m;
   if (cursor) cursor.style.display = m === 'page' ? 'block' : 'none';
@@ -164,5 +174,6 @@ window.addEventListener('DOMContentLoaded', () => {
   y = Math.max(20, viewH() / 2);
   ensureCursor();
   drawCursor();
+  ipcRenderer.send('browser:mouse', { type: 'move', x, y }); // основной процесс должен знать, где курсор
 });
 requestAnimationFrame(tick);

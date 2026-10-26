@@ -177,6 +177,7 @@ function register(opts) {
   // События от самой страницы (preload-browser.js)
   const fromPage = (name, fn) => ipcMain.on(name, (e, arg) => view && e.sender === view.webContents && fn(arg));
   fromPage('browser:mouse', (m) => {
+    if (typeof m.x === 'number') cursor = { x: m.x, y: m.y };
     const wc = view.webContents;
     const x = Math.round(m.x);
     const y = Math.round(m.y);
@@ -208,4 +209,65 @@ function register(opts) {
   app.on('before-quit', close);
 }
 
-module.exports = { register, attachWindow: (win) => win.on('resize', fit) };
+// ---------- Пульт на телефоне ----------
+// Телефон двигает тот же курсор, что и стик геймпада. Возвращает true, если сообщение забрала страница.
+let cursor = { x: 400, y: 300 };
+
+function remote(m) {
+  if (!view || mode !== 'page') return false;
+  const wc = view.webContents;
+  const b = view.getBounds();
+  const clamp = () => {
+    cursor.x = Math.min(b.width - 2, Math.max(0, cursor.x));
+    cursor.y = Math.min(b.height - 2, Math.max(0, cursor.y));
+  };
+  const scale = (b.height || 1080) / 1080;
+  const wheel = (dx, dy) => wc.sendInputEvent({ type: 'mouseWheel', x: Math.round(cursor.x), y: Math.round(cursor.y), deltaX: Math.round(dx), deltaY: Math.round(dy), canScroll: true });
+  const click = () => {
+    const x = Math.round(cursor.x);
+    const y = Math.round(cursor.y);
+    wc.send('browser:remote-click');
+    wc.sendInputEvent({ type: 'mouseDown', x, y, button: 'left', clickCount: 1 });
+    wc.sendInputEvent({ type: 'mouseUp', x, y, button: 'left', clickCount: 1 });
+  };
+  const nav = wc.navigationHistory;
+  switch (m.t) {
+    case 'm':
+      cursor.x += (Number(m.dx) || 0) * scale;
+      cursor.y += (Number(m.dy) || 0) * scale;
+      clamp();
+      wc.send('browser:cursor', cursor);
+      wc.sendInputEvent({ type: 'mouseMove', x: Math.round(cursor.x), y: Math.round(cursor.y) });
+      return true;
+    case 'c':
+      click();
+      return true;
+    case 's':
+      wheel(-(Number(m.dx) || 0), -(Number(m.dy) || 0));
+      return true;
+    case 'k':
+      if (m.k === 'a') click();
+      else if (m.k === 'up') wheel(0, 140);
+      else if (m.k === 'down') wheel(0, -140);
+      else if (m.k === 'left') wheel(140, 0);
+      else if (m.k === 'right') wheel(-140, 0);
+      else if (m.k === 'b' || m.k === 'lb') {
+        if (fullscreen) wc.executeJavaScript('document.exitFullscreen()').catch(() => {});
+        else if (nav.canGoBack()) nav.goBack();
+        else send('browser:event', { name: 'empty-back' });
+      } else if (m.k === 'rb') nav.canGoForward() && nav.goForward();
+      else if (m.k === 'x') send('browser:event', { name: 'toolbar' });
+      else if (m.k === 'y') send('browser:event', { name: 'address' });
+      else if (m.k === 'start' || m.k === 'home') send('browser:event', { name: 'exit' });
+      else return false;
+      return true;
+    case 't':
+    case 'bs':
+    case 'en':
+      return false; // текст идёт в интерфейс: в адресную строку или в поле, выбранное на странице
+    default:
+      return false;
+  }
+}
+
+module.exports = { register, remote, attachWindow: (win) => win.on('resize', fit) };

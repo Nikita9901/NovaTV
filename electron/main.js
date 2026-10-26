@@ -1,9 +1,10 @@
 const { app, BrowserWindow, WebContentsView, ipcMain, net } = require('electron');
 const path = require('path');
-const { registerApi } = require('./api');
+const { registerApi, loadSettings, patchSettings } = require('./api');
 const { registerPlayer } = require('./player');
 const diagnostics = require('./diagnostics');
 const browser = require('./browser');
+const remote = require('./remote');
 
 const isDev = process.argv.includes('--dev');
 // Папка данных одна и та же в разработке и в собранной версии (название продукта у собранной другое)
@@ -146,6 +147,7 @@ app.whenReady().then(() => {
   registerPlayer(() => win);
   diagnostics.register();
   browser.register({ getWin: () => win });
+  remote.register({ loadSettings, patchSettings, browser });
   createWindow();
   browser.attachWindow(win);
   diagnostics.watchWindow(win);
