@@ -184,7 +184,7 @@ function register(opts) {
     if (m.type === 'move') wc.sendInputEvent({ type: 'mouseMove', x, y });
     else if (m.type === 'down') wc.sendInputEvent({ type: 'mouseDown', x, y, button: 'left', clickCount: 1 });
     else if (m.type === 'up') wc.sendInputEvent({ type: 'mouseUp', x, y, button: 'left', clickCount: 1 });
-    else if (m.type === 'wheel') wc.sendInputEvent({ type: 'mouseWheel', x, y, deltaX: -Math.round(m.dx || 0), deltaY: -Math.round(m.dy || 0), canScroll: true });
+    else if (m.type === 'wheel') wc.sendInputEvent({ type: 'mouseWheel', x, y, deltaX: Math.round(m.dx || 0), deltaY: Math.round(m.dy || 0), canScroll: true });
   });
   fromPage('browser:cmd', (cmd) => {
     const wc = view.webContents;
