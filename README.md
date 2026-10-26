@@ -52,7 +52,7 @@ npm run dist:mac     # macOS (собирать нужно на macOS)
 npm run dist:linux   # Linux (собирать нужно на Linux)
 ```
 
-Сборка на GitHub: отправьте тег вида `v0.1.0` (`git tag v0.1.0 && git push --tags`) — workflow
+Сборка на GitHub: отправьте тег вида `v0.1.1` (`git tag v0.1.1 && git push --tags`) — workflow
 `.github/workflows/release.yml` соберёт версии для Windows, macOS и Linux и приложит их к релизу.
 
 ## Горячие клавиши
