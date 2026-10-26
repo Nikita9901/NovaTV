@@ -39,3 +39,32 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: ${{ matrix.files }}
+
+  android-remote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build Nova TV Remote APK
+        working-directory: remote
+        run: |
+          flutter create --platforms=android --project-name=novatv_remote --org=com.novatv .
+          git checkout -- lib pubspec.yaml analysis_options.yaml
+          node tool/setup.js
+          flutter pub get
+          flutter build apk --release
+          mv build/app/outputs/flutter-apk/app-release.apk ../NovaTV-Remote-${{ github.ref_name }}.apk
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: NovaTV-Remote-*.apk
