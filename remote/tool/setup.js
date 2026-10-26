@@ -21,6 +21,9 @@ if (!xml.includes('usesCleartextTraffic')) {
 }
 xml = xml.replace(/android:label="[^"]*"/, 'android:label="Nova TV Remote"');
 
+// Шаблонный тест от `flutter create` ссылается на несуществующий MyApp: он нам не нужен
+fs.rmSync(path.join(__dirname, '..', 'test', 'widget_test.dart'), { force: true });
+
 if (xml !== before) {
   fs.writeFileSync(file, xml);
   console.log('AndroidManifest.xml обновлён');

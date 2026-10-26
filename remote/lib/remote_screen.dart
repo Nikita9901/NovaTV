@@ -160,7 +160,7 @@ class _RemoteScreenState extends State<RemoteScreen> {
     );
   }
 
-  Widget _btn(IconData icon, String label, String key, {bool repeat = false}) {
+  Widget _btn(IconData icon, String label, String key) {
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),

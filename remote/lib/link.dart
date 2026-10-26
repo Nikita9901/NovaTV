@@ -87,6 +87,18 @@ class Link extends ChangeNotifier {
       });
       final msg = utf8.encode('NOVATV?');
       socket.send(msg, InternetAddress('255.255.255.255'), kDiscoveryPort);
+      // Рассылка есть не во всех сетях (роутеры её режут), поэтому ещё и обходим свою подсеть /24 по одному адресу
+      try {
+        for (final iface in await NetworkInterface.list(type: InternetAddressType.IPv4)) {
+          for (final a in iface.addresses) {
+            final p = a.address.split('.');
+            if (p.length != 4) continue;
+            for (var i = 1; i < 255; i++) {
+              socket.send(msg, InternetAddress('${p[0]}.${p[1]}.${p[2]}.$i'), kDiscoveryPort);
+            }
+          }
+        }
+      } catch (_) {}
       await Future<void>.delayed(const Duration(milliseconds: 600));
       socket.send(msg, InternetAddress('255.255.255.255'), kDiscoveryPort); // второй раз: UDP может потеряться
       await Future<void>.delayed(timeout);
