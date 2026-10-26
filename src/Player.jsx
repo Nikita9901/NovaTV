@@ -292,16 +292,32 @@ export default function Player({ info, title, startAt = 0, onProgress, onNext, o
     };
   }, []);
 
+  // Сбой потока посреди просмотра (оборвалось соединение, ffmpeg перезапустился): если картинка уже шла,
+  // тихо подключаемся заново с текущего места, а ошибку показываем, только когда не помогло
+  const retries = useRef({ n: 0, t: 0 });
+  const recover = (e) => {
+    console.warn('[поток] сбой:', e?.message || e);
+    const v = video.current;
+    const r = retries.current;
+    if (Date.now() - r.t > 60_000) r.n = 0;
+    if (v && v.currentTime > 1 && r.n < 4) {
+      r.n += 1;
+      r.t = Date.now();
+      setWaiting(true);
+      setStart(Math.floor(start + v.currentTime));
+    } else setError('Не удалось воспроизвести этот файл');
+  };
+
   // Поток подключаем через MediaSource (см. mse.js): сами читаем его и держим запас в пару минут.
   // При перемотке за пределы запаса или смене звука меняется start/audio — подключаем новый поток.
   useEffect(() => {
     const v = video.current;
     if (!v) return undefined;
     const handle = attachStream(v, `${base}/play?start=${start}&audio=${audio}`, {
-      onError: () => setError('Не удалось воспроизвести этот файл'),
+      onError: (e) => recover(e),
     });
     return () => handle.stop();
-  }, [base, start, audio]);
+  }, [base, start, audio]); // eslint-disable-line react-hooks/exhaustive-deps
   const shown = Math.min(pos, duration);
 
   return (
@@ -318,11 +334,12 @@ export default function Player({ info, title, startAt = 0, onProgress, onNext, o
           setWaiting(true);
         }}
         onPlaying={() => {
+          setError('');
           setWaiting(false);
           setPaused(false);
         }}
         onPause={() => setPaused(true)}
-        onError={() => setError('Не удалось воспроизвести этот файл')}
+        onError={() => recover(video.current?.error)}
         onEnded={() => (ctrl.current.hasNext && ctrl.current.onNext ? ctrl.current.onNext() : window.dispatchEvent(new Event('tv:back')))}
       />
 

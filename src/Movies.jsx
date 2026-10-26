@@ -933,7 +933,11 @@ export default function Movies({ onBack, onSettings, onTrailer, say }) {
             playing={playing}
             movie={movie}
             label={playing.ctx ? epLabel(playing.ctx.season, playing.ctx.episode) : ''}
-            onManual={() => findTorrents(tctx)}
+            onManual={() => {
+              // убираем окно с ошибкой, иначе оно останется поверх списка раздач
+              setPlaying(null);
+              findTorrents(tctx);
+            }}
           />}
 
         <div className="t-head" inert={!!playing || undefined}>
