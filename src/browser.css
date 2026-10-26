@@ -26,3 +26,22 @@
 .oskdock { position: absolute; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; flex-direction: column; gap: 1vh; padding: 1.2vh 6vw 1.6vh; background: rgba(8, 11, 20, 0.92); backdrop-filter: blur(18px); box-shadow: 0 -1px 0 var(--line); animation: rise 0.3s var(--ease) backwards; }
 .oskfield { padding: 1.2vh 2vh; border-radius: 1.6vh; font-size: 2.4vh; background: rgba(255, 255, 255, 0.1); box-shadow: inset 0 0 0 1px var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .oskdock .osk { padding: 0; background: none; box-shadow: none; backdrop-filter: none; }
+
+/* Клавиатура браузера: все клавиши одного размера, ряды по центру, как на настоящей клавиатуре */
+.wide-osk { --kw: 8.4vh; align-items: center; gap: 0.9vh; }
+.wide-osk .row { justify-content: center; gap: 0.8vh; width: 100%; }
+.wide-osk .key { flex: 0 0 var(--kw); width: var(--kw); height: 7.2vh; padding: 0; border-radius: 1.4vh; font-size: 2.8vh; display: grid; place-items: center; }
+.wide-osk .key.wide { flex-basis: calc(var(--kw) * 1.9); width: calc(var(--kw) * 1.9); font-size: 2.2vh; }
+.wide-osk .key.wider { flex-basis: calc(var(--kw) * 5.4); width: calc(var(--kw) * 5.4); font-size: 2.2vh; }
+.wide-osk .key.go { flex-basis: calc(var(--kw) * 2.9); width: calc(var(--kw) * 2.9); font-size: 2.3vh; display: grid; }
+.browser { overflow: hidden; }
+
+/* Клавиатура браузера — ровная сетка 12 × 5, все клавиши одного размера */
+.grid-osk { --kw: 10.4vh; --gap: 0.9vh; align-items: center; gap: var(--gap); }
+.osk-keys, .osk-short { display: grid; grid-template-columns: repeat(12, var(--kw)); gap: var(--gap); justify-content: center; }
+.osk-short { grid-template-columns: repeat(4, calc(var(--kw) * 3 + var(--gap) * 2)); }
+.grid-osk .key { width: 100%; height: 7.2vh; padding: 0; flex: none; border-radius: 1.4vh; font-size: 2.8vh; display: grid; place-items: center; }
+.grid-osk .key.s2 { grid-column: span 2; font-size: 2.3vh; }
+.grid-osk .key.s4 { grid-column: span 4; font-size: 2.3vh; }
+.grid-osk .key.space { color: var(--muted); }
+.grid-osk .key.go { font-weight: 700; }

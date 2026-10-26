@@ -45,14 +45,26 @@ function visibleRatio(el, r) {
   return (w * h) / (r.width * r.height);
 }
 
+// Положение элемента без учёта увеличения при фокусе (scale): иначе выбранная клавиша «налезает» на соседей и они пропадают
+function layoutRect(el) {
+  const r = el.getBoundingClientRect();
+  const dw = el.offsetWidth ? (r.width - el.offsetWidth) / 2 : 0;
+  const dh = el.offsetHeight ? (r.height - el.offsetHeight) / 2 : 0;
+  if (Math.abs(dw) < 0.5 && Math.abs(dh) < 0.5) return r;
+  return {
+    left: r.left + dw, right: r.right - dw, top: r.top + dh, bottom: r.bottom - dh,
+    width: r.width - 2 * dw, height: r.height - 2 * dh,
+  };
+}
+
 export function move(dir) {
   const items = [...document.querySelectorAll('[data-focusable]')];
   const cur = document.activeElement?.hasAttribute('data-focusable') ? document.activeElement : null;
   if (!cur) {
-    items.find((el) => !el.closest('[inert]') && visibleRatio(el, el.getBoundingClientRect()) > 0.3)?.focus();
+    items.find((el) => !el.disabled && !el.closest('[inert]') && visibleRatio(el, el.getBoundingClientRect()) > 0.3)?.focus();
     return;
   }
-  const cr = cur.getBoundingClientRect();
+  const cr = layoutRect(cur);
   const c = center(cr);
   const horizontal = dir === 'left' || dir === 'right';
   const curScrollers = scrollAncestors(cur);
@@ -62,8 +74,8 @@ export function move(dir) {
   const cands = [];
   for (const el of items) {
     if (el === cur) continue;
-    const r = el.getBoundingClientRect();
-    if (!r.width || !r.height || el.closest('[inert]')) continue;
+    const r = layoutRect(el);
+    if (!r.width || !r.height || el.disabled || el.closest('[inert]')) continue; // выключенная кнопка не принимает фокус: на неё не идём
 
     const ancestors = scrollAncestors(el);
     const sharesList = curScrollers.length > 0 && ancestors.some((a) => curScrollers.includes(a));

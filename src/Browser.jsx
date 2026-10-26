@@ -95,6 +95,11 @@ export default function Browser({ onBack, say }) {
     }
   }, [ui, osk, toolbar, st.open, tv]);
 
+  // Открылась клавиатура — фокус сразу на её первую клавишу (и на стартовой странице тоже)
+  useEffect(() => {
+    if (osk) requestAnimationFrame(() => document.querySelector('.oskdock [data-key]')?.focus());
+  }, [osk]);
+
   const go = (target) => {
     setAddr(null);
     setToolbar(false);
@@ -122,7 +127,7 @@ export default function Browser({ onBack, say }) {
   }, [addr, field, toolbar, onBack, tv]);
 
   useEffect(() => {
-    if (!st.open) requestAnimationFrame(() => document.querySelector('.browser .site')?.focus());
+    if (!st.open) requestAnimationFrame(() => !document.querySelector('.oskdock') && document.querySelector('.browser .site')?.focus());
   }, [st.open]);
 
   const marked = marks.some((m) => m.url === st.url);
