@@ -1,6 +1,6 @@
 {
   "name": "google-tv-win",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "Nova TV — домашний ТВ-интерфейс для Windows: YouTube, фильмы, сериалы, геймпад",
   "main": "electron/main.js",
