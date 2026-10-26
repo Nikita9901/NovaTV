@@ -3,10 +3,11 @@ const path = require('path');
 const { registerApi } = require('./api');
 const { registerPlayer } = require('./player');
 const diagnostics = require('./diagnostics');
+const browser = require('./browser');
 
 const isDev = process.argv.includes('--dev');
 // Папка данных одна и та же в разработке и в собранной версии (название продукта у собранной другое)
-app.setPath('userData', path.join(app.getPath('appData'), 'google-tv-win'));
+app.setPath('userData', process.env.NOVATV_USER_DATA || path.join(app.getPath('appData'), 'google-tv-win'));
 diagnostics.initLogging();
 // Leanback (youtube.com/tv) отдаёт TV-интерфейс только при TV user-agent.
 const TV_UA =
@@ -144,7 +145,9 @@ app.whenReady().then(() => {
   registerApi();
   registerPlayer(() => win);
   diagnostics.register();
+  browser.register({ getWin: () => win });
   createWindow();
+  browser.attachWindow(win);
   diagnostics.watchWindow(win);
 });
 app.on('window-all-closed', () => app.quit());

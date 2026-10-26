@@ -4,6 +4,7 @@ import { startGamepad } from './gamepad.js';
 import Movies from './Movies.jsx';
 import Settings from './Settings.jsx';
 import Setup from './Setup.jsx';
+import Browser from './Browser.jsx';
 import ErrorBoundary from './ErrorBoundary.jsx';
 import { Icon } from './icons.jsx';
 import { sfx, soundsEnabled, setSounds } from './sounds.js';
@@ -11,7 +12,7 @@ import { sfx, soundsEnabled, setSounds } from './sounds.js';
 const TILES = [
   { id: 'youtube', title: 'YouTube', sub: 'Видео и каналы', icon: 'play', from: '#ff5a4d', to: '#a1110c' },
   { id: 'movies', title: 'Фильмы', sub: 'Поиск и просмотр', icon: 'film', from: '#6a93ff', to: '#2b2fb0' },
-  { id: 'browser', title: 'Браузер', sub: 'Скоро', icon: 'globe', from: '#34d6a3', to: '#0b6a69' },
+  { id: 'browser', title: 'Браузер', sub: 'Сайты и поиск', icon: 'globe', from: '#34d6a3', to: '#0b6a69' },
   { id: 'settings', title: 'Настройки', sub: 'Звук, источники, плеер', icon: 'sliders', from: '#98a2bd', to: '#394058' },
   { id: 'exit', title: 'Выход', sub: 'Закрыть приложение', icon: 'power', from: '#7b8494', to: '#2b303c' },
 ];
@@ -80,6 +81,7 @@ export default function App() {
     else if (id === 'exit') window.tv?.quit();
     else if (id === 'settings') setScreen('settings');
     else if (id === 'movies') setScreen('movies');
+    else if (id === 'browser') setScreen('browser');
     else say('Скоро будет');
   };
 
@@ -152,6 +154,10 @@ export default function App() {
         {screen === 'setup' ? (
           <div className="screen-wrap" key="setup">
             <Setup onDone={() => setScreen('home')} say={say} />
+          </div>
+        ) : screen === 'browser' ? (
+          <div className="screen-wrap" key="browser">
+            <Browser onBack={() => setScreen('home')} say={say} />
           </div>
         ) : screen === 'movies' ? (
           <div className="screen-wrap" key="movies">

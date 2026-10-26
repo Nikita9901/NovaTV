@@ -6,6 +6,34 @@ contextBridge.exposeInMainWorld('tv', {
   searchMovies: (query) => ipcRenderer.invoke('movies:search', query),
   getMovie: (id) => ipcRenderer.invoke('movies:get', id),
   getDetails: (id) => ipcRenderer.invoke('movies:details', id),
+  browser: {
+    open: (url) => ipcRenderer.send('browser:open', url),
+    go: (text) => ipcRenderer.send('browser:go', text),
+    back: () => ipcRenderer.send('browser:back'),
+    forward: () => ipcRenderer.send('browser:forward'),
+    reload: () => ipcRenderer.send('browser:reload'),
+    close: () => ipcRenderer.send('browser:close'),
+    mode: (m) => ipcRenderer.send('browser:mode', m),
+    layout: (l) => ipcRenderer.send('browser:layout', l),
+    zoom: (d) => ipcRenderer.send('browser:zoom', d),
+    type: (text) => ipcRenderer.send('browser:type', text),
+    key: (name) => ipcRenderer.send('browser:key', name),
+    state: () => ipcRenderer.invoke('browser:state'),
+    // подписка на события страницы: { state, field, fieldValue, event }
+    on: (cb) => {
+      const subs = [
+        ['browser:state', (v) => cb({ state: v })],
+        ['browser:field', (v) => cb({ field: v })],
+        ['browser:field-value', (v) => cb({ fieldValue: v })],
+        ['browser:event', (v) => cb({ event: v })],
+      ].map(([ch, fn]) => {
+        const h = (_e, v) => fn(v);
+        ipcRenderer.on(ch, h);
+        return () => ipcRenderer.removeListener(ch, h);
+      });
+      return () => subs.forEach((off) => off());
+    },
+  },
   about: {
     info: () => ipcRenderer.invoke('app:info'),
     checkUpdate: () => ipcRenderer.invoke('app:update'),
