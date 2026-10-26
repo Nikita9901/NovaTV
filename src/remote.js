@@ -74,6 +74,9 @@ export function startRemote({ onKey, say }) {
       } else if (!target) hovered = null;
     } else if (m.t === 'c') {
       show();
+      dot.classList.remove('click');
+      void dot.offsetWidth; // перезапуск анимации волны
+      dot.classList.add('click');
       const el = under();
       const target = el?.closest?.(FOCUSABLE) || el?.closest?.('input, textarea, button, a');
       if (target && !target.disabled) {

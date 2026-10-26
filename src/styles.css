@@ -633,7 +633,13 @@ body[data-player] .toast { display: none; }
 .setup-list li.bad span { color: #ff7a6e; }
 .setup-list small { color: var(--muted); }
 
-/* «Лазерная указка» от телефона-пульта */
-.laser { position: fixed; left: -9px; top: -9px; width: 18px; height: 18px; border-radius: 50%; z-index: 99999; pointer-events: none; opacity: 0; background: #ff3b30; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85), 0 0 18px 8px rgba(255, 59, 48, 0.55); transition: opacity 0.25s; will-change: transform; }
+/* «Лазерная указка» от телефона-пульта: светящееся кольцо с яркой точкой, при клике расходится волна */
+.laser { position: fixed; left: -16px; top: -16px; width: 32px; height: 32px; border-radius: 50%; z-index: 99999; pointer-events: none; opacity: 0; transition: opacity 0.3s; will-change: transform;
+  background: radial-gradient(circle, #fff 0 4px, rgba(255, 255, 255, 0) 5px), radial-gradient(circle, rgba(110, 155, 255, 0.28) 0 55%, rgba(162, 76, 240, 0) 72%);
+  box-sizing: border-box;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.92), 0 0 0 5px rgba(110, 155, 255, 0.55), 0 0 26px 8px rgba(110, 155, 255, 0.55), 0 0 44px 14px rgba(162, 76, 240, 0.28); }
 .laser.on { opacity: 1; }
+.laser::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; border: 3px solid #fff; opacity: 0; }
+.laser.click::after { animation: laser-ripple 0.55s ease-out; }
+@keyframes laser-ripple { from { transform: scale(0.6); opacity: 0.9; } to { transform: scale(3); opacity: 0; } }
 .sval.pin { font-size: 3.6vh; font-weight: 800; letter-spacing: 0.12em; color: #fff; }

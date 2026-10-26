@@ -21,6 +21,7 @@ ipcRenderer.on('browser:cursor', (_e, p) => {
 });
 ipcRenderer.on('browser:remote-click', () => {
   lastPadClick = Date.now();
+  ripple();
 });
 
 ipcRenderer.on('browser:mode', (_e, m) => {
@@ -32,7 +33,7 @@ ipcRenderer.on('browser:mode', (_e, m) => {
 function ensureCursor() {
   if (cursor && cursor.isConnected) return;
   cursor = document.createElement('div');
-  cursor.setAttribute('style', 'position:fixed;left:0;top:0;width:28px;height:28px;z-index:2147483647;pointer-events:none;will-change:transform;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6));');
+  cursor.setAttribute('style', 'position:fixed;left:0;top:0;width:28px;height:28px;z-index:2147483647;pointer-events:none;will-change:transform;filter:drop-shadow(0 0 6px rgba(110,155,255,.9)) drop-shadow(0 2px 3px rgba(0,0,0,.6));');
   cursor.innerHTML =
     '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><path d="M4 2 L4 22 L9.5 17 L13 25 L17 23.4 L13.4 15.6 L21 15.2 Z" fill="#fff" stroke="#111" stroke-width="1.6" stroke-linejoin="round"/></svg>';
   cursor.style.display = mode === 'page' ? 'block' : 'none';
@@ -43,6 +44,20 @@ const zoom = () => webFrame.getZoomFactor() || 1;
 // Размер области страницы в «экранных» пикселях (то, что понимает sendInputEvent): CSS-пиксели × масштаб
 const viewW = () => window.innerWidth * zoom();
 const viewH = () => window.innerHeight * zoom();
+
+// Волна от места клика
+function ripple() {
+  try {
+    const r = document.createElement('div');
+    const z = zoom();
+    r.setAttribute('style', `position:fixed;left:${x / z - 18}px;top:${y / z - 18}px;width:36px;height:36px;border-radius:50%;border:3px solid #6e9bff;box-shadow:0 0 14px rgba(110,155,255,.8);z-index:2147483646;pointer-events:none;`);
+    (document.documentElement || document.body).appendChild(r);
+    const a = r.animate([{ transform: 'scale(0.4)', opacity: 0.95 }, { transform: 'scale(2.2)', opacity: 0 }], { duration: 480, easing: 'ease-out' });
+    a.onfinish = () => r.remove();
+  } catch {
+    /* страница не дала добавить элемент */
+  }
+}
 
 function drawCursor() {
   ensureCursor();
@@ -151,6 +166,7 @@ function tick(now) {
   if (b(0) && !aDown) {
     aDown = true;
     lastPadClick = Date.now();
+    ripple();
     ipcRenderer.send('browser:mouse', { type: 'down', x, y });
   } else if (!b(0) && aDown) {
     aDown = false;
