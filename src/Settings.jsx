@@ -105,6 +105,9 @@ export default function Settings({ onBack, say }) {
   const [edit, setEdit] = useState(null); // { key, label, secret }
   const [draft, setDraft] = useState('');
   const [reveal, setReveal] = useState(false);
+  const [about, setAbout] = useState(null);
+  const [update, setUpdate] = useState(null); // результат проверки обновлений
+  const [checking, setChecking] = useState(false);
   const [sub, setSub] = useState(null); // открыт вложенный раздел («Источники раздач»)
   const subRef = useRef(null);
   subRef.current = sub;
@@ -124,6 +127,10 @@ export default function Settings({ onBack, say }) {
   useEffect(() => {
     if (s) window.tv.diskInfo(s.downloadDir).then((r) => r.ok && setDisk(r.data));
   }, [s?.downloadDir]);
+
+  useEffect(() => {
+    window.tv.about?.info().then(setAbout);
+  }, []);
 
   // Частота обновления экрана — от неё зависит плавность кино (24 кадра/с)
   const [display, setDisplay] = useState(null);
@@ -424,6 +431,56 @@ export default function Settings({ onBack, say }) {
               const r = await window.tv.signOutYoutube();
               say(r.ok ? 'Вы вышли из YouTube' : 'Не удалось выйти');
             })}
+          />
+        </section>
+
+        <section className="set-group">
+          <h3>О приложении</h3>
+          <div className="srow info">
+            <span className="stext">
+              <b>Nova TV</b>
+              <small>{update?.newer ? `Доступна новая версия ${update.latest}` : update ? 'Установлена последняя версия' : 'Версия приложения'}</small>
+            </span>
+            <span className="sval">{about?.version || '…'}</span>
+          </div>
+          <Action
+            title={update?.newer ? `Скачать версию ${update.latest}` : 'Проверить обновления'}
+            sub={update?.newer ? 'Откроется страница релиза на GitHub: выберите установщик или portable-файл' : 'Сравнивает с последним релизом на GitHub'}
+            value={checking ? 'Проверяем…' : ''}
+            icon={update?.newer ? 'download' : 'back'}
+            onClick={async () => {
+              if (update?.newer) return window.tv.about.openRelease(update.url);
+              setChecking(true);
+              const r = await window.tv.about.checkUpdate();
+              setChecking(false);
+              if (!r.ok) return say(`Не удалось проверить: ${r.error}`);
+              setUpdate(r.data);
+              say(r.data.newer ? `Доступна версия ${r.data.latest}` : r.data.latest ? 'У вас последняя версия' : 'Релизов пока нет');
+            }}
+          />
+          <Action
+            title="Скопировать отчёт об ошибке"
+            sub="Версия, система и последние строки журнала: вставьте в сообщение, когда что-то сломалось"
+            icon="back"
+            onClick={async () => {
+              const r = await window.tv.about.report();
+              if (!r.ok) return say('Не удалось собрать отчёт');
+              try {
+                await navigator.clipboard.writeText(r.data);
+                say('Отчёт скопирован в буфер обмена');
+              } catch {
+                say('Не удалось скопировать');
+              }
+            }}
+          />
+          <Action
+            title="Открыть папку с журналами"
+            sub="Файл app.log со всеми событиями и ошибками"
+            icon="back"
+            onClick={async () => {
+              const r = await window.tv.about.openLogs();
+              if (!r.ok) say('Не удалось открыть папку');
+            }}
           />
         </section>
 

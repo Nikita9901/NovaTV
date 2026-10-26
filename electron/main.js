@@ -2,10 +2,12 @@ const { app, BrowserWindow, WebContentsView, ipcMain, net } = require('electron'
 const path = require('path');
 const { registerApi } = require('./api');
 const { registerPlayer } = require('./player');
+const diagnostics = require('./diagnostics');
 
 const isDev = process.argv.includes('--dev');
 // Папка данных одна и та же в разработке и в собранной версии (название продукта у собранной другое)
 app.setPath('userData', path.join(app.getPath('appData'), 'google-tv-win'));
+diagnostics.initLogging();
 // Leanback (youtube.com/tv) отдаёт TV-интерфейс только при TV user-agent.
 const TV_UA =
   'Mozilla/5.0 (SMART-TV; Linux; Tizen 6.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/6.0 TV Safari/537.36';
@@ -141,6 +143,8 @@ ipcMain.on('view:key', (_e, keyCode) => {
 app.whenReady().then(() => {
   registerApi();
   registerPlayer(() => win);
+  diagnostics.register();
   createWindow();
+  diagnostics.watchWindow(win);
 });
 app.on('window-all-closed', () => app.quit());

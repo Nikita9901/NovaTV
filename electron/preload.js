@@ -6,6 +6,13 @@ contextBridge.exposeInMainWorld('tv', {
   searchMovies: (query) => ipcRenderer.invoke('movies:search', query),
   getMovie: (id) => ipcRenderer.invoke('movies:get', id),
   getDetails: (id) => ipcRenderer.invoke('movies:details', id),
+  about: {
+    info: () => ipcRenderer.invoke('app:info'),
+    checkUpdate: () => ipcRenderer.invoke('app:update'),
+    report: () => ipcRenderer.invoke('app:report'),
+    openLogs: () => ipcRenderer.invoke('app:openLogs'),
+    openRelease: (url) => ipcRenderer.invoke('app:openRelease', url),
+  },
   prowlarr: {
     status: () => ipcRenderer.invoke('prowlarr:status'),
     install: () => ipcRenderer.invoke('prowlarr:install'),

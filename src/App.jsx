@@ -62,6 +62,17 @@ export default function App() {
     window.tv?.getSettings?.()?.then((r) => r?.ok && r.data.setupDone === false && setScreen('setup')).catch(() => {});
   }, []);
 
+  // Раз в несколько часов тихо проверяем, нет ли новой версии
+  useEffect(() => {
+    const last = Number(localStorage.getItem('update-check') || 0);
+    if (Date.now() - last < 6 * 3600 * 1000) return;
+    window.tv?.about?.checkUpdate().then((r) => {
+      if (!r?.ok) return;
+      localStorage.setItem('update-check', String(Date.now()));
+      if (r.data.newer) say(`Доступна новая версия ${r.data.latest}: Настройки → О приложении`);
+    });
+  }, []);
+
   const trailerRef = useRef(false); // YouTube открыт ради трейлера (вернуться на экран фильма, а не на главную)
 
   const launch = (id) => {
