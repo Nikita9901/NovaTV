@@ -9,7 +9,10 @@ const { pipeline } = require('stream/promises');
 const { app, ipcMain, BrowserWindow } = require('electron');
 
 const PORT = 9797; // не 9696, чтобы не пересекаться с установленным отдельно Prowlarr
-const UPDATE_FEED = 'https://prowlarr.servarr.com/v1/update/master/changes?os=windows&runtime=netcore&arch=x64';
+const WIN = process.platform === 'win32';
+const OS = WIN ? 'windows' : process.platform === 'darwin' ? 'osx' : 'linux';
+const ARCH = process.arch === 'arm64' && !WIN ? 'arm64' : 'x64';
+const UPDATE_FEED = `https://prowlarr.servarr.com/v1/update/master/changes?os=${OS}&runtime=netcore&arch=${ARCH}`;
 
 let deps = null; // { loadSettings, patchSettings }
 let child = null;
@@ -18,7 +21,7 @@ let installState = null; // { pct, text } пока идёт установка
 let lastError = '';
 
 const root = () => path.join(app.getPath('userData'), 'prowlarr');
-const exePath = () => path.join(root(), 'Prowlarr', 'Prowlarr.exe');
+const exePath = () => path.join(root(), 'Prowlarr', WIN ? 'Prowlarr.exe' : 'Prowlarr');
 const dataDir = () => path.join(root(), 'data');
 const configPath = () => path.join(dataDir(), 'config.xml');
 
@@ -110,7 +113,7 @@ async function install() {
     if (!url || !/^https:\/\/github\.com\/Prowlarr\/Prowlarr\/releases\//.test(url)) throw new Error('Не удалось узнать адрес загрузки');
 
     push(1, 'Скачиваем Prowlarr…');
-    const zip = path.join(root(), 'prowlarr.zip');
+    const zip = path.join(root(), WIN ? 'prowlarr.zip' : 'prowlarr.tar.gz');
     const res = await fetch(url);
     if (!res.ok || !res.body) throw new Error(`Загрузка не удалась (${res.status})`);
     const total = Number(res.headers.get('content-length')) || 0;
@@ -124,10 +127,17 @@ async function install() {
 
     push(90, 'Распаковываем…');
     fs.rmSync(path.join(root(), 'Prowlarr'), { recursive: true, force: true });
-    // tar из состава Windows умеет zip (в отличие от tar из Git Bash)
-    const tar = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tar.exe');
-    const r = spawnSync(tar, ['-xf', zip, '-C', root()], { windowsHide: true });
+    // В Windows архив zip: tar из состава системы его умеет (в отличие от tar из Git Bash); на macOS и Linux — tar.gz
+    const tar = WIN ? path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tar.exe') : 'tar';
+    const r = spawnSync(tar, [WIN ? '-xf' : '-xzf', zip, '-C', root()], { windowsHide: true });
     if (r.status !== 0) throw new Error('Не удалось распаковать архив');
+    if (!WIN) {
+      try {
+        fs.chmodSync(exePath(), 0o755);
+      } catch {
+        /* права выставит система */
+      }
+    }
     fs.rmSync(zip, { force: true });
     if (!installed()) throw new Error('В архиве нет Prowlarr.exe');
     ensureConfig();
@@ -176,7 +186,8 @@ function start() {
 function stop() {
   if (!child) return;
   try {
-    spawnSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true });
+    if (WIN) spawnSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true });
+    else child.kill('SIGTERM');
   } catch {
     child.kill();
   }

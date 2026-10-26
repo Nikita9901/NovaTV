@@ -9,8 +9,24 @@ permissions:
   contents: write
 
 jobs:
-  windows:
-    runs-on: windows-latest
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            script: dist
+            files: |
+              release/*.exe
+          - os: macos-latest
+            script: dist:mac
+            files: |
+              release/*.dmg
+          - os: ubuntu-latest
+            script: dist:linux
+            files: |
+              release/*.AppImage
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -18,9 +34,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run dist
+      - run: npm run ${{ matrix.script }}
       - uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: |
-            release/*.exe
+          files: ${{ matrix.files }}

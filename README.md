@@ -13,10 +13,16 @@ Nova TV — свой «Google TV» на Electron: главный экран с �
 
 ## Скачать готовую версию
 
-Откройте раздел **Releases** репозитория и скачайте:
+Откройте раздел **Releases** репозитория и скачайте файл для своей системы.
+
+**Windows** (основная платформа, всё проверено):
 
 - `NovaTV-Setup-….exe` — установщик;
 - `NovaTV-Portable-….exe` — запускается без установки.
+
+**macOS** (`NovaTV-…-mac-arm64.dmg` для Apple Silicon, `…-x64.dmg` для Intel) и **Linux** (`NovaTV-…-linux.AppImage`):
+сборки появились недавно и **не проверялись на реальных машинах**. Приложение не подписано, поэтому на macOS первый запуск —
+правый клик по приложению → «Открыть»; на Linux перед запуском: `chmod +x NovaTV-*.AppImage`.
 
 ## Первый запуск
 
@@ -38,11 +44,13 @@ Nova TV — свой «Google TV» на Electron: главный экран с �
 npm install
 npm run dev      # разработка (окно приложения + горячая перезагрузка интерфейса)
 npm run start    # собрать интерфейс и запустить без упаковки
-npm run dist     # установщик и portable-версия в папке release/
+npm run dist         # Windows: установщик и portable-версия в папке release/
+npm run dist:mac     # macOS (собирать нужно на macOS)
+npm run dist:linux   # Linux (собирать нужно на Linux)
 ```
 
 Сборка на GitHub: отправьте тег вида `v0.1.0` (`git tag v0.1.0 && git push --tags`) — workflow
-`.github/workflows/release.yml` соберёт exe и приложит их к релизу.
+`.github/workflows/release.yml` соберёт версии для Windows, macOS и Linux и приложит их к релизу.
 
 ## Горячие клавиши
 

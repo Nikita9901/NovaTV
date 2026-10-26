@@ -9,7 +9,9 @@
     "build": "vite build",
     "start": "vite build && electron .",
     "dist": "vite build && electron-builder --win",
-    "pack": "vite build && electron-builder --win --dir"
+    "pack": "vite build && electron-builder --win --dir",
+    "dist:mac": "vite build && electron-builder --mac",
+    "dist:linux": "vite build && electron-builder --linux"
   },
   "dependencies": {
     "ffmpeg-static": "^5.3.0",
@@ -26,7 +28,10 @@
     "wait-on": "^9.5.1"
   },
   "productName": "Nova TV",
-  "author": "nikitichsn2",
+  "author": {
+    "name": "nikitichsn2",
+    "email": "nikitichsn2@gmail.com"
+  },
   "license": "MIT",
   "build": {
     "appId": "com.novatv.app",
@@ -77,6 +82,35 @@
     ],
     "portable": {
       "artifactName": "NovaTV-Portable-${version}.${ext}"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "category": "public.app-category.entertainment",
+      "icon": "build/icon.png"
+    },
+    "dmg": {
+      "artifactName": "NovaTV-${version}-mac-${arch}.${ext}"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "category": "AudioVideo",
+      "icon": "build/icon.png",
+      "artifactName": "NovaTV-${version}-linux.${ext}"
     }
   }
 }

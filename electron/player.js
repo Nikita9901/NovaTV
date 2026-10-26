@@ -95,7 +95,7 @@ function markSparse(file) {
   try {
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.closeSync(fs.openSync(file, 'a'));
-    execFileSync('fsutil', ['sparse', 'setflag', file], { stdio: 'ignore', windowsHide: true });
+    if (process.platform === 'win32') execFileSync('fsutil', ['sparse', 'setflag', file], { stdio: 'ignore', windowsHide: true });
   } catch (err) {
     console.warn('[sparse] не удалось пометить файл разреженным:', err.message);
   }
