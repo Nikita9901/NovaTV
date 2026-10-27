@@ -26,6 +26,7 @@ jobs:
             script: dist:linux
             files: |
               release/*.AppImage
+              release/*.deb
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
