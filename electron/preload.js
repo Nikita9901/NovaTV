@@ -54,6 +54,13 @@ contextBridge.exposeInMainWorld('tv', {
   about: {
     info: () => ipcRenderer.invoke('app:info'),
     checkUpdate: () => ipcRenderer.invoke('app:update'),
+    downloadUpdate: () => ipcRenderer.invoke('app:update-download'),
+    applyUpdate: () => ipcRenderer.invoke('app:update-apply'),
+    onUpdateProgress: (cb) => {
+      const h = (_e, v) => cb(v);
+      ipcRenderer.on('app:update-progress', h);
+      return () => ipcRenderer.removeListener('app:update-progress', h);
+    },
     report: () => ipcRenderer.invoke('app:report'),
     openLogs: () => ipcRenderer.invoke('app:openLogs'),
     openRelease: (url) => ipcRenderer.invoke('app:openRelease', url),

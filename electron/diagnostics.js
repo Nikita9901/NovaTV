@@ -5,7 +5,6 @@ const os = require('os');
 const path = require('path');
 const { app, ipcMain, shell, BrowserWindow } = require('electron');
 
-const REPO = 'Nikita9901/NovaTV';
 const MAX_LOG = 2 * 1024 * 1024; // после этого размера журнал начинается заново (старый остаётся как app.old.log)
 
 const logDir = () => path.join(app.getPath('userData'), 'logs');
@@ -76,35 +75,6 @@ function watchWindow(win) {
   win.webContents.on('render-process-gone', (_e, d) => line('fatal', `процесс страницы завершился: ${d.reason} (код ${d.exitCode})`));
 }
 
-// ---------- Обновления ----------
-const parts = (v) => String(v).replace(/^v/i, '').split('.').map((n) => parseInt(n, 10) || 0);
-function isNewer(latest, current) {
-  const a = parts(latest);
-  const b = parts(current);
-  for (let i = 0; i < 3; i++) {
-    if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) > (b[i] || 0);
-  }
-  return false;
-}
-
-async function checkUpdate() {
-  const res = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
-    headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'NovaTV' },
-    signal: AbortSignal.timeout(15_000),
-  });
-  if (res.status === 404) return { current: app.getVersion(), latest: null, newer: false };
-  if (!res.ok) throw new Error(`GitHub ответил ${res.status}`);
-  const r = await res.json();
-  const latest = String(r.tag_name || '').replace(/^v/i, '');
-  return {
-    current: app.getVersion(),
-    latest,
-    newer: !!latest && isNewer(latest, app.getVersion()),
-    url: r.html_url,
-    notes: String(r.body || '').slice(0, 1500),
-  };
-}
-
 // ---------- Отчёт об ошибке ----------
 function report() {
   flush();
@@ -131,24 +101,11 @@ function register() {
     arch: process.arch,
     logDir: logDir(),
   }));
-  ipcMain.handle('app:update', async () => {
-    try {
-      return { ok: true, data: await checkUpdate() };
-    } catch (e) {
-      return { ok: false, error: e.message };
-    }
-  });
   ipcMain.handle('app:report', () => ({ ok: true, data: report() }));
   ipcMain.handle('app:openLogs', async () => {
     fs.mkdirSync(logDir(), { recursive: true });
     const err = await shell.openPath(logDir());
     return err ? { ok: false, error: err } : { ok: true };
-  });
-  // Страницу загрузки открываем только если она принадлежит нашему репозиторию
-  ipcMain.handle('app:openRelease', async (_e, url) => {
-    if (typeof url !== 'string' || !url.startsWith(`https://github.com/${REPO}/`)) return { ok: false };
-    await shell.openExternal(url);
-    return { ok: true };
   });
 }
 

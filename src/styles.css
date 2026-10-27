@@ -643,3 +643,13 @@ body[data-player] .toast { display: none; }
 .laser.click::after { animation: laser-ripple 0.55s ease-out; }
 @keyframes laser-ripple { from { transform: scale(0.6); opacity: 0.9; } to { transform: scale(3); opacity: 0; } }
 .sval.pin { font-size: 3.6vh; font-weight: 800; letter-spacing: 0.12em; color: #fff; }
+
+/* Окно «Доступна новая версия» */
+.upd-backdrop { position: fixed; inset: 0; z-index: 9000; display: grid; place-items: center; background: rgba(5, 8, 15, 0.72); backdrop-filter: blur(12px); animation: rise 0.3s var(--ease) backwards; }
+.upd { width: 54vw; max-width: 1100px; display: flex; flex-direction: column; gap: 1.8vh; padding: 4vh 3vw; border-radius: 3vh; background: linear-gradient(160deg, rgba(36, 46, 96, 0.96), rgba(22, 20, 56, 0.97)); box-shadow: inset 0 0 0 1px var(--line), 0 5vh 14vh rgba(0, 0, 0, 0.6); animation: rise 0.45s var(--ease) backwards; }
+.upd-ico { width: 8vh; height: 8vh; border-radius: 2.2vh; display: grid; place-items: center; font-size: 4.4vh; background: linear-gradient(135deg, #6e9bff, #a24cf0); box-shadow: 0 1.6vh 4vh rgba(110, 100, 255, 0.45); }
+.upd h2 { margin: 0.6vh 0 0; font-size: 4.2vh; font-weight: 760; letter-spacing: -0.02em; }
+.upd-ver { margin: 0; font-size: 2.4vh; line-height: 1.5; color: rgba(238, 241, 248, 0.88); }
+.upd-ver small { color: var(--muted); font-size: 2vh; }
+.upd-ver.warn { color: #ffd873; }
+.upd-notes { margin: 0; padding-left: 2.4vh; display: flex; flex-direction: column; gap: 0.6vh; font-size: 2vh; color: var(--muted); }

@@ -5,6 +5,7 @@ import Movies from './Movies.jsx';
 import Settings from './Settings.jsx';
 import Setup from './Setup.jsx';
 import Browser from './Browser.jsx';
+import UpdatePrompt from './UpdatePrompt.jsx';
 import ErrorBoundary from './ErrorBoundary.jsx';
 import { Icon } from './icons.jsx';
 import { sfx, soundsEnabled, setSounds } from './sounds.js';
@@ -64,15 +65,18 @@ export default function App() {
     window.tv?.getSettings?.()?.then((r) => r?.ok && r.data.setupDone === false && setScreen('setup')).catch(() => {});
   }, []);
 
-  // Раз в несколько часов тихо проверяем, нет ли новой версии
+  // Новая версия: при запуске спрашиваем, ставить ли. «Пропустить» запоминает версию, «Позже» — до следующего запуска.
+  const [update, setUpdate] = useState(null);
   useEffect(() => {
-    const last = Number(localStorage.getItem('update-check') || 0);
-    if (Date.now() - last < 6 * 3600 * 1000) return;
     window.tv?.about?.checkUpdate().then((r) => {
-      if (!r?.ok) return;
-      localStorage.setItem('update-check', String(Date.now()));
-      if (r.data.newer) say(`Доступна новая версия ${r.data.latest}: Настройки → О приложении`);
+      if (!r?.ok || !r.data.newer) return;
+      if (localStorage.getItem('update-skip') === r.data.latest) return;
+      setUpdate(r.data);
     });
+    // из «Настройки → О приложении» окно открывается и по требованию
+    const show = (e) => setUpdate(e.detail);
+    window.addEventListener('tv:show-update', show);
+    return () => window.removeEventListener('tv:show-update', show);
   }, []);
 
   const trailerRef = useRef(false); // YouTube открыт ради трейлера (вернуться на экран фильма, а не на главную)
@@ -155,7 +159,7 @@ export default function App() {
   return (
     <>
       <div className="ambient" />
-      <main className="app">
+      <main className="app" inert={!!update || undefined}>
         <ErrorBoundary resetKey={screen} onReset={() => setScreen('home')}>
         {screen === 'setup' ? (
           <div className="screen-wrap" key="setup">
@@ -233,6 +237,16 @@ export default function App() {
         )}
         </ErrorBoundary>
       </main>
+      {update && (
+        <UpdatePrompt
+          info={update}
+          onClose={() => setUpdate(null)}
+          onSkip={() => {
+            localStorage.setItem('update-skip', update.latest);
+            setUpdate(null);
+          }}
+        />
+      )}
     </>
   );
 }

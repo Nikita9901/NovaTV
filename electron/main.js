@@ -3,6 +3,7 @@ const path = require('path');
 const { registerApi, loadSettings, patchSettings } = require('./api');
 const { registerPlayer } = require('./player');
 const diagnostics = require('./diagnostics');
+const updater = require('./updater');
 const browser = require('./browser');
 const remote = require('./remote');
 
@@ -146,6 +147,7 @@ app.whenReady().then(() => {
   registerApi();
   registerPlayer(() => win);
   diagnostics.register();
+  updater.register();
   browser.register({ getWin: () => win });
   remote.register({ loadSettings, patchSettings, browser });
   createWindow();

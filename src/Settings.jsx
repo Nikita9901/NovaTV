@@ -494,11 +494,11 @@ export default function Settings({ onBack, say }) {
           </div>
           <Action
             title={update?.newer ? `Скачать версию ${update.latest}` : 'Проверить обновления'}
-            sub={update?.newer ? 'Откроется страница релиза на GitHub: выберите установщик или portable-файл' : 'Сравнивает с последним релизом на GitHub'}
+            sub={update?.newer ? 'Приложение само скачает и установит новую версию' : 'Сравнивает с последним релизом на GitHub'}
             value={checking ? 'Проверяем…' : ''}
             icon={update?.newer ? 'download' : 'back'}
             onClick={async () => {
-              if (update?.newer) return window.tv.about.openRelease(update.url);
+              if (update?.newer) return window.dispatchEvent(new CustomEvent('tv:show-update', { detail: update }));
               setChecking(true);
               const r = await window.tv.about.checkUpdate();
               setChecking(false);
