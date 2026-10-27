@@ -107,11 +107,36 @@
           "arch": [
             "x64"
           ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "category": "AudioVideo",
       "icon": "build/icon.png",
-      "artifactName": "NovaTV-${version}-linux.${ext}"
+      "artifactName": "NovaTV-${version}-linux.${ext}",
+      "maintainer": "nikitichsn2 <nikitichsn2@gmail.com>",
+      "synopsis": "Nova TV",
+      "description": "Домашний ТВ-интерфейс: YouTube, фильмы и сериалы, браузер, управление геймпадом и телефоном"
+    },
+    "afterPack": "build/afterPack.js",
+    "deb": {
+      "depends": [
+        "libgtk-3-0",
+        "libnotify4",
+        "libnss3",
+        "libxss1",
+        "libxtst6",
+        "xdg-utils",
+        "libatspi2.0-0",
+        "libuuid1",
+        "libsecret-1-0",
+        "libgbm1"
+      ]
     }
-  }
+  },
+  "homepage": "https://github.com/Nikita9901/NovaTV"
 }

@@ -140,6 +140,9 @@ async function install() {
     fs.rmSync(zip, { force: true });
     if (!installed()) throw new Error('В архиве нет Prowlarr.exe');
     ensureConfig();
+    fs.rmSync(path.join(root(), '.mac-fixed-v1'), { force: true });
+    push(96, 'Готовим файлы…');
+    fixMac();
     push(100, 'Готово');
   } finally {
     installState = null;
@@ -148,29 +151,76 @@ async function install() {
 }
 
 // ---------- Запуск и остановка ----------
+// macOS: файлы из архива без подписи. На Apple Silicon ядро убивает неподписанный код («Killed: 9»), а Gatekeeper может
+// остановить программы с пометкой карантина (её наследуют файлы, которые создаёт приложение, скачанное из интернета).
+// Снимаем карантин и ставим «ad-hoc» подпись (достаточно для запуска) на исполняемый файл и библиотеки. Делается один раз.
+function fixMac() {
+  if (process.platform !== 'darwin') return;
+  const marker = path.join(root(), '.mac-fixed-v1');
+  if (fs.existsSync(marker)) return;
+  const dir = path.join(root(), 'Prowlarr');
+  try {
+    spawnSync('xattr', ['-dr', 'com.apple.quarantine', dir]);
+    const files = [];
+    const walk = (d) => {
+      for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+        const f = path.join(d, e.name);
+        if (e.isDirectory()) walk(f);
+        else if (/\.(dylib|so)$/.test(e.name) || e.name === 'Prowlarr' || (fs.statSync(f).mode & 0o111) !== 0) files.push(f);
+      }
+    };
+    walk(dir);
+    for (const f of files) spawnSync('codesign', ['--force', '--sign', '-', f]);
+    fs.writeFileSync(marker, new Date().toISOString());
+    console.log(`[prowlarr] macOS: подписано файлов: ${files.length}`);
+  } catch (e) {
+    console.warn('[prowlarr] macOS: не удалось подготовить файлы:', e.message);
+  }
+}
+
+const runLog = () => path.join(root(), 'run.log');
+const tailLog = (n = 12) => {
+  try {
+    return fs.readFileSync(runLog(), 'utf8').trim().split('\n').slice(-n).join('\n');
+  } catch {
+    return '';
+  }
+};
+
 function start() {
   if (startPromise) return startPromise;
   startPromise = (async () => {
     lastError = '';
     if (!installed()) throw new Error('Prowlarr ещё не установлен');
     ensureConfig();
+    fixMac();
     if (await reachable()) return; // уже работает
     let exited = false;
-    child = spawn(exePath(), [`/data=${dataDir()}`, '/nobrowser'], { windowsHide: true, stdio: 'ignore' });
-    child.on('exit', () => {
+    let exitInfo = '';
+    // Вывод Prowlarr пишем в файл: если не запустится, причина будет видна в отчёте об ошибке
+    const out = fs.openSync(runLog(), 'a');
+    // В Windows ключи через «/», в macOS и Linux через «-»
+    const args = WIN ? [`/data=${dataDir()}`, '/nobrowser'] : [`-data=${dataDir()}`, '-nobrowser'];
+    child = spawn(exePath(), args, { windowsHide: true, stdio: ['ignore', out, out] });
+    child.on('exit', (code, signal) => {
       exited = true;
+      exitInfo = signal ? `сигнал ${signal}` : `код ${code}`;
       child = null;
     });
     child.on('error', (e) => {
       exited = true;
-      lastError = e.message;
+      exitInfo = e.message;
     });
     for (let i = 0; i < 90; i++) {
       await new Promise((r) => setTimeout(r, 1000));
       if (await reachable()) return;
       if (exited) {
-        lastError =
-          'Prowlarr сразу закрылся. Скорее всего, уже запущен другой Prowlarr: закройте его (значок в трее → Exit) или переключитесь на «Свой Prowlarr»';
+        const log = tailLog();
+        console.warn(`[prowlarr] завершился (${exitInfo}):\n${log}`);
+        const another = /Another instance|already running/i.test(log);
+        lastError = another
+          ? 'Уже запущен другой Prowlarr: закройте его (значок в трее → Exit) или переключитесь на «Свой Prowlarr»'
+          : `Prowlarr закрылся сразу после запуска (${exitInfo}).${process.platform === 'darwin' ? ' На macOS это бывает из-за защиты системы: откройте «Настройки → О приложении → Скопировать отчёт об ошибке» и пришлите его.' : ''}${log ? `\n${log.split('\n').slice(-3).join('\n')}` : ''}`;
         throw new Error(lastError);
       }
     }
