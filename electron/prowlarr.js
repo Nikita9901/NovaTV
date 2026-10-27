@@ -7,6 +7,7 @@ const { spawn, spawnSync } = require('child_process');
 const { Readable } = require('stream');
 const { pipeline } = require('stream/promises');
 const { app, ipcMain, BrowserWindow } = require('electron');
+const { resolveDownload } = require('./prowlarr-download');
 
 const PORT = 9797; // не 9696, чтобы не пересекаться с установленным отдельно Prowlarr
 const WIN = process.platform === 'win32';
@@ -108,13 +109,11 @@ async function install() {
   };
   try {
     fs.mkdirSync(root(), { recursive: true });
-    const feed = await (await fetch(UPDATE_FEED, { signal: AbortSignal.timeout(20_000) })).json();
-    const url = feed?.[0]?.url;
-    if (!url || !/^https:\/\/github\.com\/Prowlarr\/Prowlarr\/releases\//.test(url)) throw new Error('Не удалось узнать адрес загрузки');
+    const { url } = await resolveDownload(fetch, { os: OS, arch: ARCH, feedUrl: UPDATE_FEED });
 
     push(1, 'Скачиваем Prowlarr…');
     const zip = path.join(root(), WIN ? 'prowlarr.zip' : 'prowlarr.tar.gz');
-    const res = await fetch(url);
+    const res = await fetch(url, { headers: { 'User-Agent': 'NovaTV' } });
     if (!res.ok || !res.body) throw new Error(`Загрузка не удалась (${res.status})`);
     const total = Number(res.headers.get('content-length')) || 0;
     let got = 0;
