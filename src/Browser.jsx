@@ -208,10 +208,10 @@ export default function Browser({ onBack, say }) {
           <Icon name="back" />
         </button>
         <button data-focusable className="tbtn" disabled={!st.open} onClick={() => tv.reload()} aria-label="Обновить">
-          {st.loading ? '✕' : '⟳'}
+          <Icon name={st.loading ? 'close' : 'refresh'} />
         </button>
         <button data-focusable className="tbtn" disabled={!st.open} onClick={() => tv.close()} aria-label="Стартовая страница">
-          ⌂
+          <Icon name="home" />
         </button>
         <button data-focusable data-addr className="addr" onClick={openAddress}>
           <Icon name="search" />
@@ -219,16 +219,16 @@ export default function Browser({ onBack, say }) {
           {addr !== null && <i className="caret" />}
         </button>
         <button data-focusable className={`tbtn ${marked ? 'on' : ''}`} disabled={!st.open} onClick={toggleMark} aria-label="Закладка">
-          ★
+          <Icon name="bookmark" />
         </button>
         <button data-focusable className="tbtn" disabled={!st.open} onClick={() => tv.zoom(-0.1)} aria-label="Уменьшить">
-          A−
+          <Icon name="zoomOut" />
         </button>
         <button data-focusable className="tbtn" disabled={!st.open} onClick={() => tv.zoom(0.1)} aria-label="Увеличить">
-          A+
+          <Icon name="zoomIn" />
         </button>
         <button data-focusable className="tbtn" onClick={onBack} aria-label="Закрыть браузер">
-          ✕
+          <Icon name="close" />
         </button>
       </div>
 

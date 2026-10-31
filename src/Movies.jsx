@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Player from './Player.jsx';
 import { Icon } from './icons.jsx';
+import { Poster, Rating } from './Poster.jsx';
 import { sfx } from './sounds.js';
 
 const LAYOUTS = {
@@ -35,7 +36,6 @@ const readAudioPref = (id) => {
   }
 };
 
-const ratingClass = (r) => (r >= 7 ? 'good' : r >= 5.5 ? 'mid' : 'bad');
 
 // ---- Подборки под «Продолжить просмотр» ----
 const RAILS = [
@@ -100,32 +100,6 @@ const focusSoon = (...selectors) =>
   });
 
 // Постер с плавным появлением, когда картинка загрузилась
-function Poster({ src, className = '' }) {
-  const [ok, setOk] = useState(false);
-  return (
-    <div className={`poster ${className} ${ok ? 'loaded' : ''}`}>
-      {src && (
-        <img
-          src={src}
-          alt=""
-          ref={(el) => el?.complete && el.naturalWidth && !ok && setOk(true)}
-          onLoad={() => setOk(true)}
-        />
-      )}
-    </div>
-  );
-}
-
-function Rating({ value }) {
-  if (!(value > 0)) return null;
-  return (
-    <span className={`rating ${ratingClass(value)}`}>
-      <Icon name="star" />
-      {value.toFixed(1)}
-    </span>
-  );
-}
-
 // Снимок данных фильма для списка «Продолжить просмотр»
 const snapshot = (m) => ({
   id: m.id,
@@ -145,7 +119,7 @@ const snapshot = (m) => ({
   countries: m.countries,
 });
 
-export default function Movies({ onBack, onSettings, onTrailer, say, active = true, onPlayback, onMinimize }) {
+export default function Movies({ onBack, onSettings, onTrailer, say, active = true, onPlayback, onMinimize, intent, onIntentHandled }) {
   // Экран может быть скрыт, пока идёт свёрнутый просмотр: тогда он не должен реагировать на кнопки
   const activeRef = useRef(active);
   activeRef.current = active;
@@ -561,6 +535,22 @@ export default function Movies({ onBack, onSettings, onTrailer, say, active = tr
     window.tv.getPerson?.(p.id)?.then((r) => setPerson((cur) => (cur?.id === p.id ? (r?.ok ? { ...cur, ...r.data } : { ...cur, movies: [] }) : cur))).catch(() => {});
     focusSoon('[data-autofocus]', '[data-focusable]');
   };
+
+  // Пришли с главной: открыть этот фильм, а при «Продолжить» сразу запустить с сохранённого места
+  const autoResume = useRef(false);
+  useEffect(() => {
+    if (!intent) return;
+    autoResume.current = intent.action === 'resume';
+    openMovie(intent.movie);
+    onIntentHandled?.();
+    if (autoResume.current) setTimeout(() => (autoResume.current = false), 6000); // не нажимаем позже без нужды
+  }, [intent]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (view !== 'detail' || !autoResume.current || !resume) return;
+    autoResume.current = false;
+    const t = setTimeout(() => document.querySelector('.actions [data-autofocus]')?.click(), 350);
+    return () => clearTimeout(t);
+  }, [view, resume]);
 
   const findTorrents = async (ctx = null) => {
     viaAuto.current = false;

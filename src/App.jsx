@@ -5,19 +5,13 @@ import Movies from './Movies.jsx';
 import Settings from './Settings.jsx';
 import Setup from './Setup.jsx';
 import Browser from './Browser.jsx';
+import Home from './Home.jsx';
 import UpdatePrompt from './UpdatePrompt.jsx';
 import ErrorBoundary from './ErrorBoundary.jsx';
 import { Icon } from './icons.jsx';
 import { sfx, soundsEnabled, setSounds } from './sounds.js';
 import { startRemote } from './remote.js';
 
-const TILES = [
-  { id: 'youtube', title: 'YouTube', sub: 'Видео и каналы', icon: 'play', from: '#ff5a4d', to: '#a1110c' },
-  { id: 'movies', title: 'Фильмы', sub: 'Поиск и просмотр', icon: 'film', from: '#6a93ff', to: '#2b2fb0' },
-  { id: 'browser', title: 'Браузер', sub: 'Сайты и поиск', icon: 'globe', from: '#34d6a3', to: '#0b6a69' },
-  { id: 'settings', title: 'Настройки', sub: 'Звук, источники, плеер', icon: 'sliders', from: '#98a2bd', to: '#394058' },
-  { id: 'exit', title: 'Выход', sub: 'Закрыть приложение', icon: 'power', from: '#7b8494', to: '#2b303c' },
-];
 
 const padCount = () => [...(navigator.getGamepads?.() || [])].filter(Boolean).length;
 
@@ -72,10 +66,12 @@ export default function App() {
   playbackRef.current = playback;
   const screenRef = useRef(screen);
   screenRef.current = screen;
-  const [update, setUpdate] = useState(null);
+  const [update, setUpdate] = useState(null); // открытое окно «Доступна новая версия»
+  const [updateAvail, setUpdateAvail] = useState(null); // доступное обновление (для значка на главной)
   useEffect(() => {
     window.tv?.about?.checkUpdate().then((r) => {
       if (!r?.ok || !r.data.newer) return;
+      setUpdateAvail(r.data);
       if (localStorage.getItem('update-skip') === r.data.latest) return;
       setUpdate(r.data);
     });
@@ -86,6 +82,13 @@ export default function App() {
   }, []);
 
   const trailerRef = useRef(false); // YouTube открыт ради трейлера (вернуться на экран фильма, а не на главную)
+
+  // Открыть фильм из баннера или подборки на главной: action 'resume' сразу продолжает, 'open' показывает страницу
+  const [intent, setIntent] = useState(null);
+  const openMovie = (movie, action) => {
+    if (!playbackRef.current) setIntent({ movie, action });
+    setScreen('movies'); // если просмотр уже идёт, возвращаем к нему
+  };
 
   const launch = (id) => {
     if (id === 'youtube') window.tv?.openYoutube();
@@ -98,7 +101,7 @@ export default function App() {
 
   // Возвращаем фокус на плитки, когда вернулись на главную
   useEffect(() => {
-    if (screen === 'home') requestAnimationFrame(() => document.querySelector('.tile')?.focus());
+    if (screen === 'home') setTimeout(() => (document.querySelector('.home2 [data-autofocus]') || document.querySelector('.h2-tile'))?.focus(), 120);
   }, [screen]);
 
   useEffect(() => {
@@ -184,47 +187,17 @@ export default function App() {
             <Settings onBack={() => setScreen('home')} say={say} />
           </div>
         ) : (
-          <div className="home screen-wrap" key="home">
-            <header className="home-head">
-              <div className="hello">
-                <div className="clock">{time}</div>
-                <div className="date">
-                  {greeting(now.getHours())} · {date}
-                </div>
-              </div>
-              <div className={`chip ${pad ? 'on' : ''}`}>
-                <Icon name="gamepad" />
-                {pad ? 'Геймпад подключён' : 'Нажмите кнопку на геймпаде'}
-              </div>
-            </header>
-
-            <section className="tiles">
-              {TILES.map((t, i) => (
-                <button
-                  key={t.id}
-                  data-focusable
-                  className="tile"
-                  style={{ '--from': t.from, '--to': t.to, '--i': i }}
-                  onClick={() => launch(t.id)}
-                >
-                  <span className="tile-art">
-                    <Icon name={t.icon} />
-                  </span>
-                  <span className="tile-text">
-                    <span className="title">{t.title}</span>
-                    <span className="sub">{t.sub}</span>
-                  </span>
-                </button>
-              ))}
-            </section>
-
-            <footer className="hints">
-              <span><kbd>Ⓐ</kbd> Выбрать</span>
-              <span><kbd>Ⓑ</kbd> Назад</span>
-              <span><kbd>Start</kbd> На главную</span>
-              <span><kbd>F11</kbd> Окно / полный экран</span>
-              <span><kbd>F8</kbd> Звуки</span>
-            </footer>
+          <div className="screen-wrap" key="home">
+            <Home
+              time={time}
+              date={date}
+              greeting={greeting(now.getHours())}
+              pad={pad}
+              update={updateAvail}
+              onUpdate={() => updateAvail && setUpdate(updateAvail)}
+              onLaunch={launch}
+              onOpenMovie={openMovie}
+            />
           </div>
         )}
 
@@ -238,6 +211,8 @@ export default function App() {
                 trailerRef.current = true;
                 window.tv?.openYoutube(url);
               }}
+              intent={intent}
+              onIntentHandled={() => setIntent(null)}
               onPlayback={setPlayback}
               onMinimize={() => setScreen('home')}
               say={say}
@@ -265,10 +240,14 @@ export default function App() {
       {update && (
         <UpdatePrompt
           info={update}
-          onClose={() => setUpdate(null)}
+          onClose={() => {
+            setUpdate(null);
+            setTimeout(() => document.querySelector('.screen-wrap:not([hidden]) [data-autofocus]')?.focus(), 80); // фокус возвращается на экран под окном
+          }}
           onSkip={() => {
             localStorage.setItem('update-skip', update.latest);
             setUpdate(null);
+            setTimeout(() => document.querySelector('.screen-wrap:not([hidden]) [data-autofocus]')?.focus(), 80);
           }}
         />
       )}

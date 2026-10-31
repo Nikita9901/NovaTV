@@ -61,6 +61,34 @@ const PATHS = {
     </>
   ),
   back: <path d="M15 5l-7 7 7 7" />,
+  home: <path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4v-5H9v5H5a1 1 0 0 1-1-1z" />,
+  phone: (
+    <>
+      <rect x="7" y="2.5" width="10" height="19" rx="2.5" />
+      <path d="M11 18.5h2" />
+    </>
+  ),
+  info: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v5M12 8h.01" />
+    </>
+  ),
+  refresh: <path d="M19.5 12a7.5 7.5 0 1 1-2.4-5.5M19.5 4.5v4h-4" />,
+  close: <path d="M6 6l12 12M18 6 6 18" />,
+  zoomIn: (
+    <>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="M20 20l-4.2-4.2M11 8.5v5M8.5 11h5" />
+    </>
+  ),
+  zoomOut: (
+    <>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="M20 20l-4.2-4.2M8.5 11h5" />
+    </>
+  ),
+  bookmark: <path d="M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1z" />,
   download: <path d="M12 4v11M7 11l5 5 5-5M5 20h14" />,
   trash: <path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13" />,
 };
