@@ -533,6 +533,7 @@ async function diskInfo(dir) {
 function registerApi() {
   loadSettings(); // создаст settings.json при первом запуске
   prowlarr.register({ loadSettings, patchSettings });
+  require('./taste').register({ loadSettings, getJson, normMovie, discover, movieDetails, detailsCache, readProgress });
   ipcMain.handle('movies:search', wrap(searchMovies));
   ipcMain.handle('torrents:search', wrap(searchTorrents));
   ipcMain.handle('movies:get', wrap(movieById));

@@ -113,7 +113,7 @@ export default function App() {
         if (document.body.dataset.player) window.dispatchEvent(new CustomEvent('tv:pad', { detail: 'start' }));
         else setScreen('home');
       } else if (a === 'start' && playbackRef.current && screenRef.current !== 'movies') setScreen('movies'); // Start вне плеера: вернуться к фильму
-      else if (document.body.dataset.player) window.dispatchEvent(new CustomEvent('tv:pad', { detail: a }));
+      else if (document.body.dataset.player || document.body.dataset.picker) window.dispatchEvent(new CustomEvent('tv:pad', { detail: a }));
       else if (a === 'a') activate();
       else if (['up', 'down', 'left', 'right'].includes(a)) move(a);
       else window.dispatchEvent(new CustomEvent('tv:pad', { detail: a })); // X / Y / LB / RB — для экранов
@@ -124,7 +124,7 @@ export default function App() {
     const onKey = (e) => {
       const dir = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' }[e.key];
       if ((dir === 'left' || dir === 'right') && e.target.tagName === 'INPUT') return;
-      if (dir && !document.body.dataset.player) {
+      if (dir && !document.body.dataset.player && !document.body.dataset.picker) {
         e.preventDefault();
         move(dir);
       }

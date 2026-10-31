@@ -83,6 +83,10 @@ contextBridge.exposeInMainWorld('tv', {
       return () => ipcRenderer.removeListener('prowlarr:progress', h);
     },
   },
+  pickNext: (arg) => ipcRenderer.invoke('pick:next', arg),
+  pickRecord: (arg) => ipcRenderer.invoke('pick:record', arg),
+  pickProfile: () => ipcRenderer.invoke('pick:profile'),
+  pickReset: () => ipcRenderer.invoke('pick:reset'),
   getPerson: (id) => ipcRenderer.invoke('movies:person', id),
   discover: (row, genre) => ipcRenderer.invoke('movies:discover', { row, genre }),
   getSeasons: (movie) => ipcRenderer.invoke('series:seasons', { id: movie.id, seasonsInfo: movie.seasonsInfo || [] }),

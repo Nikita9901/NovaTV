@@ -89,6 +89,12 @@ const PATHS = {
     </>
   ),
   bookmark: <path d="M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1z" />,
+  cards: (
+    <>
+      <rect x="6" y="4" width="12" height="16" rx="2.2" />
+      <path d="M3 8v8M21 8v8" />
+    </>
+  ),
   download: <path d="M12 4v11M7 11l5 5 5-5M5 20h14" />,
   trash: <path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13" />,
 };

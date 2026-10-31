@@ -4,6 +4,7 @@ import App from './App.jsx';
 import '@fontsource-variable/inter/index.css';
 import './styles.css';
 import './home.css';
+import './picker.css';
 import './browser.css';
 import { applyPrefs } from './prefs.js';
 

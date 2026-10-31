@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Player from './Player.jsx';
+import Picker from './Picker.jsx';
 import { Icon } from './icons.jsx';
 import { Poster, Rating } from './Poster.jsx';
 import { sfx } from './sounds.js';
@@ -123,7 +124,8 @@ export default function Movies({ onBack, onSettings, onTrailer, say, active = tr
   // Экран может быть скрыт, пока идёт свёрнутый просмотр: тогда он не должен реагировать на кнопки
   const activeRef = useRef(active);
   activeRef.current = active;
-  const [view, setView] = useState('search'); // search | detail | torrents
+  const [view, setView] = useState('search'); // search | detail | torrents | pick
+  const [pickKind, setPickKind] = useState('movie'); // что подбираем: movie | series
   const [kbd, setKbd] = useState(true); // экранная клавиатура показана
   const [lang, setLang] = useState('ru');
   const [q, setQ] = useState('');
@@ -302,6 +304,9 @@ export default function Movies({ onBack, onSettings, onTrailer, say, active = tr
           setView('detail');
           focusSoon('[data-autofocus]');
         } else focusSoon('[data-torrent]');
+      } else if (view === 'pick') {
+        setView('search');
+        focusSoon('[data-pick]', '[data-search]');
       } else if (view === 'torrents') {
         setView('detail');
         focusSoon('[data-autofocus]');
@@ -551,6 +556,12 @@ export default function Movies({ onBack, onSettings, onTrailer, say, active = tr
     const t = setTimeout(() => document.querySelector('.actions [data-autofocus]')?.click(), 350);
     return () => clearTimeout(t);
   }, [view, resume]);
+
+  // «Смотреть» в подборе: открываем страницу фильма и сразу запускаем (у сериала нужно выбрать серию, поэтому только открываем)
+  const watchFromPick = (m) => {
+    openMovie(m);
+    if (pickKind === 'movie') setTimeout(() => document.querySelector('.actions [data-autofocus]')?.click(), 650);
+  };
 
   const findTorrents = async (ctx = null) => {
     viaAuto.current = false;
@@ -1098,8 +1109,14 @@ export default function Movies({ onBack, onSettings, onTrailer, say, active = tr
     );
   }
 
+  if (view === 'pick') return <Picker kind={pickKind} onWatch={watchFromPick} />;
+
   // ======================= Поиск =======================
   const searching = q.trim().length >= 3;
+  const startPick = (kind) => {
+    setPickKind(kind);
+    setView('pick');
+  };
   return (
     <div className="screen search enter">
       <div className="m-head">
@@ -1127,6 +1144,15 @@ export default function Movies({ onBack, onSettings, onTrailer, say, active = tr
             </button>
           )}
         </div>
+
+        <button data-focusable data-pick className="btn ghost" onClick={() => startPick('movie')}>
+          <Icon name="cards" />
+          Подобрать фильм
+        </button>
+        <button data-focusable className="btn ghost" onClick={() => startPick('series')}>
+          <Icon name="cards" />
+          Подобрать сериал
+        </button>
 
         <button data-focusable data-kbd className="btn ghost" onClick={toggleKbd}>
           <Icon name="keyboard" />
