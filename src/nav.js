@@ -142,6 +142,8 @@ export function move(dir) {
     pick.el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     // вернулись к кнопкам в шапке страницы фильма — показываем страницу с самого верха, чтобы не обрезалось название
     if (pick.el.closest('.d-top, .pp-head')) pick.el.closest('.detail')?.scrollTo({ top: 0 });
+    // то же на главной: баннер и шапка показываются с самого верха
+    if (pick.el.closest('.h2-hero, .h2-head')) pick.el.closest('.home2')?.scrollTo({ top: 0 });
     sfx.move();
   } else sfx.bump();
 }

@@ -395,7 +395,7 @@ export default function Movies({ onBack, onSettings, onTrailer, say, active = tr
       }
     };
     // Иначе браузер сочтёт отпускание пробела «нажатием» на кнопку
-    const onKeyUp = (e) => e.key === ' ' && e.preventDefault();
+    const onKeyUp = (e) => e.key === ' ' && activeRef.current && e.preventDefault();
     // Кнопки геймпада: Y — спрятать/показать клавиатуру, X — убрать фильм из «Продолжить»
     const onPad = (e) => {
       if (!activeRef.current) return;
