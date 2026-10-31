@@ -558,6 +558,11 @@ body[data-player] .toast { display: none; }
   border-radius: 99px; font-size: 2.4vh; font-weight: 650; background: rgba(255, 255, 255, 0.94); color: #0b0e17;
   box-shadow: 0 1.6vh 4vh rgba(0, 0, 0, 0.55); animation: pop-in 0.35s var(--spring) backwards;
 }
+.skip.timed { position: absolute; overflow: hidden; }
+.skip-in { position: relative; z-index: 1; display: flex; align-items: center; gap: 1.2vh; }
+/* Затемнение медленно заполняет кнопку слева направо: так видно, сколько ещё она будет висеть */
+.skip.timed::before { content: ''; position: absolute; inset: 0; width: 100%; transform-origin: left center; background: rgba(11, 14, 23, 0.42); transform: scaleX(0); animation: skip-timer var(--t) linear forwards; }
+@keyframes skip-timer { to { transform: scaleX(1); } }
 .skip kbd { color: #0b0e17; background: rgba(0, 0, 0, 0.08); border-color: rgba(0, 0, 0, 0.18); }
 .skip small { margin-left: 0.6vh; font-size: 1.6vh; opacity: 0.55; font-weight: 600; }
 .skip.next { background: linear-gradient(135deg, #6e9bff, #9b7bff); color: #fff; }

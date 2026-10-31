@@ -53,6 +53,18 @@ const topGenre = (entries) => {
 };
 
 // ---- Сериалы ----
+// Следующая серия после данной по списку сезонов: в этом же сезоне, иначе первая серия следующего; null — это была последняя
+const nextAfter = (seasons, ctx) => {
+  if (!ctx || !seasons) return null;
+  const si = seasons.findIndex((s) => s.number === ctx.season);
+  if (si < 0) return null;
+  const eps = seasons[si].episodes;
+  const ei = eps.findIndex((e) => e.number === ctx.episode);
+  if (ei >= 0 && eps[ei + 1]) return { season: ctx.season, episode: eps[ei + 1].number };
+  const nextSeason = seasons[si + 1];
+  return nextSeason?.episodes?.[0] ? { season: nextSeason.number, episode: nextSeason.episodes[0].number } : null;
+};
+
 const span = (r) => (r[0] === r[1] ? `${r[0]}` : `${r[0]}–${r[1]}`);
 const epKey = (s, e) => `${s}:${e}`;
 const epLabel = (s, e) => (s ? `S${s} · E${e}` : `Серия ${e}`);
@@ -232,14 +244,35 @@ export default function Movies({ onBack, onSettings, onTrailer, say }) {
     // Ключ записи: «id» для фильма и «id:сезон:серия» для серий сериала
     const all = Object.entries(res.data).map(([key, e]) => ({ ...e, key, id: Number(key.split(':')[0]) }));
 
-    // У сериала в списке одна карточка — последняя незаконченная серия; законченные серии не показываем
+    // У сериала в списке одна карточка — по самой свежей записи: недосмотренная серия или, если серию досмотрели, следующая за ней
     const latest = new Map();
-    for (const e of all.filter((x) => x.movie && x.duration && !x.done)) {
+    for (const e of all.filter((x) => x.movie && x.duration)) {
       const cur = latest.get(e.id);
       if (!cur || e.updatedAt > cur.updatedAt) latest.set(e.id, e);
     }
-    setCont([...latest.values()].sort((a, b) => b.updatedAt - a.updatedAt));
+    const shown = [];
+    const unknown = []; // досмотренные серии, для которых следующую ещё не знаем (записаны до этого исправления)
+    for (const e of latest.values()) {
+      if (!e.done) shown.push(e);
+      else if (e.episode && e.nextEpisode) shown.push({ ...e, upNext: true, season: e.nextEpisode.season, episode: e.nextEpisode.episode, position: 0, duration: 1 });
+      else if (e.episode && e.nextEpisode === undefined) unknown.push(e);
+      // nextEpisode === null: досмотрели последнюю серию, сериал закончился
+    }
+    setCont(shown.sort((a, b) => b.updatedAt - a.updatedAt));
     loadRails(all);
+
+    // Узнаём следующую серию для старых записей и запоминаем (по несколько штук за раз, чтобы не нагружать сервис)
+    if (unknown.length && retry) {
+      let learned = 0;
+      for (const e of unknown.slice(0, 4)) {
+        const r = await window.tv.getSeasons(e.movie).catch(() => null);
+        if (!r?.ok) continue;
+        const { id, key, ...entry } = e;
+        await window.tv.setProgress(key, { ...entry, nextEpisode: nextAfter(r.data, { season: e.season || 0, episode: e.episode }) });
+        learned++;
+      }
+      if (learned) return loadContinue(false);
+    }
 
     // Записи, сохранённые до появления этого блока, без названия и постера — достраиваем по id один раз
     const legacy = all.filter((e) => !e.movie && e.duration);
@@ -412,6 +445,7 @@ export default function Movies({ onBack, onSettings, onTrailer, say }) {
   useEffect(() => {
     if (view !== 'detail' || !movie) return;
     let alive = true;
+    let pendingNext = null;
     setResume(null);
     setEpProg({});
     setLastTorrent(null);
@@ -435,9 +469,16 @@ export default function Movies({ onBack, onSettings, onTrailer, say }) {
         for (const e of mine) if (e.episode) map[epKey(e.season || 0, e.episode)] = e;
         setEpProg(map);
         const newest = [...mine].sort((a, b) => b.updatedAt - a.updatedAt);
-        setLastTorrent(newest[0]?.torrent || null);
-        const open = newest.find((e) => !e.done); // последняя незаконченная серия
-        setResume(open || null);
+        const last = newest[0];
+        setLastTorrent(last?.torrent || null);
+        let open = null;
+        if (last && !last.done) open = last; // недосмотренная серия
+        else if (last?.done) {
+          // серию досмотрели — предлагаем следующую
+          if (last.nextEpisode) open = { upNext: true, season: last.nextEpisode.season, episode: last.nextEpisode.episode, torrent: last.torrent, position: 0, duration: 1 };
+          else if (last.nextEpisode === undefined) pendingNext = last; // старая запись: узнаем, когда загрузятся сезоны
+        }
+        setResume(open);
         if (open?.season) setSeason(open.season);
         if (open) focusSoon('[data-autofocus]');
       } else {
@@ -454,6 +495,16 @@ export default function Movies({ onBack, onSettings, onTrailer, say }) {
         if (!alive) return;
         const list = r.ok ? r.data : [];
         setSeasons(list);
+        if (pendingNext && r.ok) {
+          const nx = nextAfter(list, { season: pendingNext.season || 0, episode: pendingNext.episode });
+          const { key, ...entry } = pendingNext;
+          window.tv.setProgress(key, { ...entry, nextEpisode: nx });
+          if (nx) {
+            setResume({ upNext: true, season: nx.season, episode: nx.episode, torrent: pendingNext.torrent, position: 0, duration: 1 });
+            setSeason(nx.season);
+            focusSoon('[data-autofocus]');
+          }
+        }
         setSeason((cur) => (list.some((s) => s.number === cur) ? cur : (list[0]?.number ?? 1)));
       });
     }
@@ -468,7 +519,8 @@ export default function Movies({ onBack, onSettings, onTrailer, say }) {
     const key = ctx ? `${movie.id}:${ctx.season || 0}:${ctx.episode}` : String(movie.id);
     const extra = ctx ? { season: ctx.season || 0, episode: ctx.episode } : {};
     if (position > duration - 120) {
-      if (ctx) window.tv.setProgress(key, { position: duration, duration, torrent, movie: snapshot(movie), done: true, ...extra });
+      // законченную серию помечаем и запоминаем, какая за ней следующая: по этому «Продолжить просмотр» предложит её
+      if (ctx) window.tv.setProgress(key, { position: duration, duration, torrent, movie: snapshot(movie), done: true, ...(seasons ? { nextEpisode: nextAfter(seasons, ctx) } : {}), ...extra });
       else window.tv.setProgress(key, null);
     } else if (position >= 30) {
       window.tv.setProgress(key, { position, duration, torrent, movie: snapshot(movie), ...extra });
@@ -596,16 +648,7 @@ export default function Movies({ onBack, onSettings, onTrailer, say }) {
 
   // Следующая серия из той же раздачи (по окончании или кнопкой Ⓨ)
   // Следующая серия по списку сезонов (если известен): в этом же сезоне, иначе первая серия следующего
-  const nextEpisodeOf = (ctx) => {
-    if (!ctx || !seasons) return null;
-    const si = seasons.findIndex((s) => s.number === ctx.season);
-    if (si < 0) return null;
-    const eps = seasons[si].episodes;
-    const ei = eps.findIndex((e) => e.number === ctx.episode);
-    if (ei >= 0 && eps[ei + 1]) return { season: ctx.season, episode: eps[ei + 1].number };
-    const nextSeason = seasons[si + 1];
-    return nextSeason?.episodes?.[0] ? { season: nextSeason.number, episode: nextSeason.episodes[0].number } : null;
-  };
+  const nextEpisodeOf = (ctx) => nextAfter(seasons, ctx);
 
   // Следующая серия: из этой же раздачи, если она там есть; иначе подбираем раздачу для неё (с приоритетом прежней)
   const playNext = () => {
@@ -677,7 +720,7 @@ export default function Movies({ onBack, onSettings, onTrailer, say }) {
               </button>
             )}
 
-            {resume && (
+            {resume && !resume.upNext && (
               <div className="resume-line">
                 <div className="rbar">
                   <i style={{ width: `${Math.min(100, (resume.position / resume.duration) * 100)}%` }} />
@@ -696,6 +739,7 @@ export default function Movies({ onBack, onSettings, onTrailer, say }) {
                   data-autofocus
                   className="btn primary"
                   onClick={() => {
+                    if (resume.upNext) return watchEpisode(resume.season, resume.episode); // следующая серия: раздачу подберём как обычно
                     viaAuto.current = false;
                     setTorrents(null);
                     setTctx(resumeCtx);
@@ -703,7 +747,7 @@ export default function Movies({ onBack, onSettings, onTrailer, say }) {
                     play(resume.torrent, resume.position, resumeCtx);
                   }}
                 >
-                  <Icon name="play" /> Продолжить{resumeCtx ? ` · ${epLabel(resume.season, resume.episode)}` : ' просмотр'}
+                  <Icon name="play" /> {resume.upNext ? 'Следующая серия' : 'Продолжить'}{resumeCtx ? ` · ${epLabel(resume.season, resume.episode)}` : ' просмотр'}
                 </button>
               )}
               {!isSeries && (
@@ -1124,12 +1168,14 @@ export default function Movies({ onBack, onSettings, onTrailer, say }) {
                           <span className="cinfo">
                             <b>{m.title}{e.episode ? ' · ' + epLabel(e.season, e.episode) : ''}</b>
                             <span>
-                              {fmtTime(e.position)} из {fmtTime(e.duration)} · {fmtLeft(e.duration - e.position)}
+                              {e.upNext ? 'Следующая серия' : `${fmtTime(e.position)} из ${fmtTime(e.duration)} · ${fmtLeft(e.duration - e.position)}`}
                             </span>
                           </span>
-                          <span className="cbar">
-                            <i style={{ width: `${pct}%` }} />
-                          </span>
+                          {!e.upNext && (
+                            <span className="cbar">
+                              <i style={{ width: `${pct}%` }} />
+                            </span>
+                          )}
                         </button>
                       );
                     })}

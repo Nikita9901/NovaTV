@@ -29,6 +29,7 @@ const fmtAhead = (s) => {
 const SEEK_STEP = 10;
 const SEEK_BIG = 60;
 
+const INTRO_PILL_MS = 8000; // сколько секунд висит «Пропустить заставку»
 const INTRO_RE = /intro|opening|заставк|опенинг|вступлен|\bop\b/i;
 const CREDITS_RE = /credits|ending|титры|эндинг|\bed\b/i;
 
@@ -141,7 +142,18 @@ export default function Player({ info, title, startAt = 0, onProgress, onNext, o
     ? (info.chapters || []).find((c) => c.start < 300 && c.end - c.start >= 15 && c.end - c.start <= 240 && INTRO_RE.test(c.title))
     : null;
   const introJump = info.introSkip || 90;
-  const showIntro = episode && menu === null && duration > 600 && pos >= (introCh ? introCh.start : 4) && pos < (introCh ? introCh.end - 3 : 170);
+  const inIntro = !!episode && menu === null && duration > 600 && pos >= (introCh ? introCh.start : 4) && pos < (introCh ? introCh.end - 3 : 170);
+  // Кнопка висит 8 секунд с момента, когда заставка началась, и исчезает, если её не нажали
+  const [introGone, setIntroGone] = useState(false);
+  useEffect(() => {
+    if (!inIntro) {
+      setIntroGone(false); // вернулись к началу — предложим снова
+      return undefined;
+    }
+    const t = setTimeout(() => setIntroGone(true), INTRO_PILL_MS);
+    return () => clearTimeout(t);
+  }, [inIntro]);
+  const showIntro = inIntro && !introGone;
 
   const skipIntro = () => {
     const t = introCh ? introCh.end : Math.min(absNow() + introJump, 400);
@@ -360,8 +372,10 @@ export default function Player({ info, title, startAt = 0, onProgress, onNext, o
       )}
 
       {showIntro && (
-        <div className="skip">
-          <kbd>Ⓨ</kbd> Пропустить заставку <small>S</small>
+        <div className="skip timed" style={{ '--t': `${INTRO_PILL_MS}ms` }}>
+          <span className="skip-in">
+            <kbd>Ⓨ</kbd> Пропустить заставку <small>S</small>
+          </span>
         </div>
       )}
       {showNext && (
