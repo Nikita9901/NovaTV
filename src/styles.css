@@ -588,11 +588,22 @@ body[data-player] .toast { display: none; }
 .people-row { overflow-x: auto; padding: 1.6vh 1vw 1.6vh; margin: 0 -1vw; scroll-padding: 0 3vw; }
 .avatar { background-position: center 18%; }
 .avatar.big { width: 22vh; height: 22vh; flex: none; }
-.pp-head { display: flex; align-items: center; gap: 2.4vw; padding: 2vh 1vw 0; }
-.pp-head h2 { margin: 0 0 0.6vh; font-size: 5.2vh; font-weight: 750; }
-.pp-head .orig { margin: 0 0 2vh; font-size: 2.2vh; color: var(--muted); }
+/* Шапка страницы актёра: герой-блок на размытом фоне из фото */
+.pp-head { display: flex; align-items: center; gap: 2.6vw; padding: 4.5vh 2vw 1vh; }
+.pp-head .avatar.big { box-shadow: 0 2.4vh 6vh rgba(0, 0, 0, 0.6), 0 0 0 1px var(--line); animation: rise 0.7s var(--ease) backwards; }
+.pp-info { display: flex; flex-direction: column; align-items: flex-start; animation: slide-x 0.7s var(--ease) 0.08s backwards; }
+.pp-head h2 { margin: 0 0 0.6vh; font-size: 5.8vh; line-height: 1.05; font-weight: 750; letter-spacing: -0.02em; text-shadow: 0 0.5vh 2.4vh rgba(0, 0, 0, 0.5); }
+.pp-head .orig { margin: 0; font-size: 2.2vh; color: var(--muted); }
+.pp-facts { margin: 1.8vh 0 0; }
+.pp-stats { display: flex; flex-wrap: wrap; gap: 1vw; margin: 2.4vh 0 2.6vh; }
+.pp-stat { display: flex; flex-direction: column; gap: 0.3vh; min-width: 9vw; padding: 1.3vh 1.2vw; border-radius: 1.6vh; background: var(--glass); box-shadow: inset 0 0 0 1px var(--line); }
+.pp-stat b { font-size: 3.2vh; font-weight: 760; line-height: 1.1; }
+.pp-stat small { font-size: 1.7vh; color: var(--muted); }
+.pp-stat.wide { flex: 0 1 auto; }
+.person-page h3 .h3-count { margin-left: 0.2vw; padding: 0.35vh 1vw; border-radius: 99px; font-size: 1.7vh; font-weight: 700; background: var(--glass-2); color: var(--muted); }
 .pgrid { display: flex; flex-wrap: wrap; gap: 2.4vh 1.2vw; padding: 2vh 1vw 4vh; }
 .pgrid .card { flex: 0 0 17vh; width: 17vh; }
+.top-badge { position: absolute; top: 0.9vh; right: 0.9vh; z-index: 2; padding: 0.4vh 0.7vw; border-radius: 99px; font-size: 1.55vh; font-weight: 800; letter-spacing: 0.02em; color: #201503; background: linear-gradient(135deg, #ffe08a, #ffb84d); box-shadow: 0 0.5vh 1.4vh rgba(0, 0, 0, 0.5); }
 
 /* Фото человека целиком: лицо не обрезается, поля заполняет размытая копия этого же снимка */
 .avatar { position: relative; overflow: hidden; background: linear-gradient(135deg, #1c2545, #0e1428); }

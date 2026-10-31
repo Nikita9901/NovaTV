@@ -901,14 +901,47 @@ export default function Movies({ onBack, onSettings, onTrailer, say }) {
 
   // ======================= Список раздач =======================
   if (view === 'person' && person) {
+    const films = person.movies || [];
+    const rated = films.filter((m) => m.rating > 0);
+    const avg = rated.length ? rated.reduce((s, m) => s + m.rating, 0) / rated.length : 0;
+    const best = rated.reduce((b, m) => (m.rating > (b?.rating || 0) ? m : b), null);
     return (
       <div className="screen detail person-page enter">
+        <div className="detail-bg" style={{ backgroundImage: person.photo ? `url("${person.photo}")` : undefined }} />
         <div className="pp-head">
           <span className="avatar big" style={{ '--photo': person.photo ? `url("${person.photo}")` : 'none' }} />
-          <div>
+          <div className="pp-info">
             <h2>{person.name}</h2>
             {person.original && person.original !== person.name && <p className="orig">{person.original}</p>}
-            {person.bio?.length > 0 && <p className="crew">{person.bio.join(' · ')}</p>}
+            {person.bio?.length > 0 && (
+              <div className="chips pp-facts">
+                {person.bio.map((f) => (
+                  <span className="chip-s soft" key={f}>
+                    {f}
+                  </span>
+                ))}
+              </div>
+            )}
+            {films.length > 0 && (
+              <div className="pp-stats">
+                <span className="pp-stat">
+                  <b>{films.length}</b>
+                  <small>в фильмографии</small>
+                </span>
+                {avg > 0 && (
+                  <span className="pp-stat">
+                    <b>{avg.toFixed(1)}</b>
+                    <small>средний рейтинг</small>
+                  </span>
+                )}
+                {best && (
+                  <span className="pp-stat wide">
+                    <b>{best.rating.toFixed(1)}</b>
+                    <small>лучшая работа — {best.title}</small>
+                  </span>
+                )}
+              </div>
+            )}
             <button data-focusable data-autofocus className="btn ghost" onClick={() => window.dispatchEvent(new Event('tv:back'))}>
               <Icon name="back" /> Назад
             </button>
@@ -917,18 +950,20 @@ export default function Movies({ onBack, onSettings, onTrailer, say }) {
         <section className="people">
           <h3>
             <Icon name="film" /> Фильмография
+            {films.length > 0 && <span className="h3-count">{films.length}</span>}
           </h3>
           {person.movies === null && <p className="hint">Загружаем фильмы…</p>}
-          {person.movies && !person.movies.length && <p className="hint">Нет данных о фильмах</p>}
+          {person.movies && !films.length && <p className="hint">Нет данных о фильмах</p>}
           <div className="pgrid">
-            {(person.movies || []).map((it, i) => (
+            {films.map((it, i) => (
               <button
                 key={it.id}
                 data-focusable
-                className="card"
+                className={i < 3 && it.rating > 0 ? 'card top' : 'card'}
                 style={{ '--i': Math.min(i, 10) }}
                 onClick={() => openMovie(it, true)}
               >
+                {i < 3 && it.rating > 0 && <span className="top-badge">Топ-{i + 1}</span>}
                 <Poster src={it.poster} />
                 <span className="badge">
                   <Rating value={it.rating} />
