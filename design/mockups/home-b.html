@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Nova TV: главная, вариант B</title>
+<link rel="stylesheet" href="common.css">
+<style>
+  .side { position: absolute; left: 0; top: 0; bottom: 0; width: 150px; background: rgba(9,12,22,.92); box-shadow: 1px 0 0 var(--line); display: flex; flex-direction: column; align-items: center; padding-top: 70px; gap: 14px; z-index: 3; }
+  .logo { width: 72px; height: 72px; border-radius: 22px; background: linear-gradient(135deg, #6e9bff, #a24cf0); display: grid; place-items: center; font-size: 42px; margin-bottom: 30px; box-shadow: 0 14px 36px rgba(110,100,255,.45); }
+  .nav { width: 84px; height: 84px; border-radius: 26px; display: grid; place-items: center; font-size: 42px; color: rgba(238,241,248,.7); }
+  .nav.on { background: #fff; color: #0b0e17; }
+  .hero { position: absolute; left: 150px; right: 0; top: 0; height: 700px; overflow: hidden; }
+  .scene { position: absolute; inset: 0; background: radial-gradient(1000px 600px at 75% 25%, #6a3fd0 0%, rgba(106,63,208,0) 70%), radial-gradient(800px 500px at 100% 100%, #2447b8 0%, rgba(36,71,184,0) 65%), linear-gradient(120deg, #1a1240 0%, #2a1c66 60%, #3a2486 100%); }
+  .fade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(7,10,18,.9) 0%, rgba(7,10,18,.55) 40%, rgba(7,10,18,0) 80%), linear-gradient(0deg, #070a12 0%, rgba(7,10,18,0) 40%); }
+  .top { position: absolute; right: 70px; top: 50px; display: flex; align-items: center; gap: 14px; z-index: 2; }
+  .time { font-size: 40px; font-weight: 500; margin-left: 12px; }
+  .info { position: absolute; left: 250px; top: 120px; width: 980px; }
+  .meta { display: flex; gap: 14px; align-items: center; font-size: 24px; color: rgba(238,241,248,.8); margin-bottom: 18px; }
+  .meta .pill { padding: 4px 14px; border-radius: 10px; background: rgba(255,255,255,.14); font-weight: 700; }
+  .meta .imdb { background: #f5c518; color: #1a1300; }
+  .title { font-size: 76px; font-weight: 800; letter-spacing: -.035em; line-height: 1.02; }
+  .plot { font-size: 26px; line-height: 1.5; color: rgba(238,241,248,.78); margin: 18px 0 28px; max-width: 800px; }
+  .rail { position: absolute; left: 150px; right: 0; top: 700px; padding-left: 100px; }
+  .rail .label { margin-bottom: 20px; }
+  .row { display: flex; gap: 26px; }
+  .land { flex: none; width: 440px; height: 248px; border-radius: 24px; position: relative; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255,255,255,.1); }
+  .land b { position: absolute; left: 22px; bottom: 40px; font-size: 28px; font-weight: 700; text-shadow: 0 2px 12px rgba(0,0,0,.6); }
+  .land span { position: absolute; left: 22px; bottom: 14px; font-size: 20px; color: rgba(255,255,255,.75); }
+  .land .bar { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; border-radius: 0; background: rgba(255,255,255,.2); }
+  .land.on { outline: 6px solid #fff; transform: scale(1.04); }
+</style>
+</head>
+<body>
+<div class="screen">
+  <div class="side">
+    <div class="logo"><i data-i="play"></i></div>
+    <div class="nav on"><i data-i="home"></i></div>
+    <div class="nav"><i data-i="film"></i></div>
+    <div class="nav"><i data-i="tv"></i></div>
+    <div class="nav"><i data-i="globe"></i></div>
+    <div class="nav"><i data-i="sliders"></i></div>
+  </div>
+
+  <div class="hero"><div class="scene"></div><div class="fade"></div></div>
+  <div class="top">
+    <span class="chip"><i data-i="gamepad"></i></span><span class="chip"><i data-i="phone"></i></span><span class="chip acc"><i data-i="download"></i>0.2.0</span>
+    <span class="time">21:40</span>
+  </div>
+
+  <div class="info">
+    <div class="meta"><span class="pill imdb">IMDb 7.9</span><span>Сериал</span><span>2025</span><span class="pill">18+</span><span>Ужасы · Фэнтези</span></div>
+    <div class="title">Оно: Добро пожаловать в Дерри</div>
+    <div class="plot">1962 год. Военный Лерой Хэнлон вместе с семьёй переезжает в небольшой город Дерри в штате Мэн. Когда в городе начинают пропадать дети…</div>
+    <span class="btn p"><i data-i="play"></i>Следующая серия · S1 E2</span>
+  </div>
+
+  <div class="rail">
+    <div class="label">Продолжить просмотр</div>
+    <div class="row">
+      <div class="land on" style="background:linear-gradient(120deg,#1e2a5c,#3b57c9)"><b>Бесстыжие</b><span>Сезон 3 · серия 3</span><div class="bar"><i style="width:42%"></i></div></div>
+      <div class="land" style="background:linear-gradient(120deg,#4a2f2f,#a0553a)"><b>Интерстеллар</b><span>осталось 1 ч 51 мин</span><div class="bar"><i style="width:24%"></i></div></div>
+      <div class="land" style="background:linear-gradient(120deg,#2f4a3a,#3aa07a)"><b>Шерлок</b><span>Сезон 2 · серия 1</span><div class="bar"><i style="width:70%"></i></div></div>
+      <div class="land" style="background:linear-gradient(120deg,#3a2f4a,#6a3aa0)"><b>Фоллаут</b><span>Сезон 1 · серия 4</span><div class="bar"><i style="width:15%"></i></div></div>
+    </div>
+  </div>
+</div>
+<script src="icons.js"></script>
+<script>document.querySelectorAll('i[data-i]').forEach((e) => { e.outerHTML = ic(e.dataset.i); });</script>
+</body>
+</html>

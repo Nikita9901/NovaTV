@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Nova TV: главная, вариант A</title>
+<link rel="stylesheet" href="common.css">
+<style>
+  .head { position: absolute; left: 96px; right: 96px; top: 56px; display: flex; justify-content: space-between; align-items: flex-start; }
+  .clock { font-size: 72px; font-weight: 300; letter-spacing: -.03em; line-height: 1; }
+  .date { font-size: 26px; color: var(--muted); margin-top: 8px; }
+  .chips { display: flex; gap: 14px; margin-top: 10px; }
+  .hero { position: absolute; left: 96px; right: 96px; top: 190px; height: 420px; border-radius: 40px; overflow: hidden; display: flex; box-shadow: 0 40px 100px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.12); background: #131a3a; }
+  .scene { position: absolute; inset: 0; background: radial-gradient(900px 500px at 78% 30%, #3b57c9 0%, rgba(59,87,201,0) 70%), radial-gradient(700px 500px at 95% 100%, #7b3fd0 0%, rgba(123,63,208,0) 65%), linear-gradient(120deg, #141c44 0%, #1b2766 55%, #24317f 100%); }
+  .shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(8,11,24,.92) 0%, rgba(8,11,24,.75) 38%, rgba(8,11,24,0) 78%); }
+  .info { position: relative; padding: 52px 64px; width: 960px; display: flex; flex-direction: column; justify-content: center; }
+  .kick { font-size: 24px; font-weight: 700; color: #9bb6ff; margin-bottom: 10px; letter-spacing: .02em; }
+  .title { font-size: 80px; font-weight: 800; letter-spacing: -.03em; line-height: 1.02; }
+  .sub { font-size: 28px; color: rgba(238,241,248,.8); margin: 14px 0 22px; }
+  .acts { display: flex; gap: 18px; margin-top: 30px; }
+  .tiles { position: absolute; left: 96px; right: 96px; top: 650px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 22px; }
+  .tile { height: 120px; border-radius: 28px; display: flex; align-items: center; gap: 22px; padding: 0 34px; font-size: 32px; font-weight: 700; background: var(--glass); box-shadow: inset 0 0 0 1px var(--line); color: rgba(238,241,248,.88); }
+  .tile .ic { font-size: 46px; }
+  .tile.on { background: #fff; color: #0b0e17; transform: scale(1.04); box-shadow: 0 24px 60px rgba(110,155,255,.4); }
+  .rail { position: absolute; left: 96px; right: 0; top: 820px; }
+  .rail .label { margin-bottom: 20px; }
+  .row { display: flex; gap: 26px; }
+</style>
+</head>
+<body>
+<div class="screen">
+  <div class="amb" style="left:-200px;top:-260px;width:900px;height:760px;background:#2447b8;opacity:.45"></div>
+  <div class="amb" style="right:-240px;top:300px;width:900px;height:760px;background:#6a30c0;opacity:.35"></div>
+
+  <div class="head">
+    <div><div class="clock">21:40</div><div class="date">Добрый вечер · вторник, 27 октября</div></div>
+    <div class="chips">
+      <span class="chip"><i data-i="gamepad"></i>Геймпад</span>
+      <span class="chip"><i data-i="phone"></i>Телефон</span>
+      <span class="chip acc"><i data-i="download"></i>Обновление 0.2.0</span>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div class="scene"></div><div class="shade"></div>
+    <div class="info">
+      <div class="kick">ПРОДОЛЖИТЬ ПРОСМОТР</div>
+      <div class="title">Бесстыжие</div>
+      <div class="sub">Сезон 3 · серия 3 · осталось 30 минут</div>
+      <div class="bar" style="width:520px"><i style="width:42%"></i></div>
+      <div class="acts"><span class="btn p"><i data-i="play"></i>Продолжить</span><span class="btn"><i data-i="info"></i>Подробнее</span></div>
+    </div>
+  </div>
+
+  <div class="tiles">
+    <div class="tile on"><i data-i="play"></i>YouTube</div>
+    <div class="tile"><i data-i="film"></i>Фильмы</div>
+    <div class="tile"><i data-i="globe"></i>Браузер</div>
+    <div class="tile"><i data-i="sliders"></i>Настройки</div>
+    <div class="tile"><i data-i="power"></i>Выход</div>
+  </div>
+
+  <div class="rail">
+    <div class="label">Новинки</div>
+    <div class="row">
+      <div class="poster" style="width:230px;height:340px;background:linear-gradient(160deg,#9b3a62,#3a1530)"><em>8.2</em><b>Дюна: Часть вторая</b></div>
+      <div class="poster" style="width:230px;height:340px;background:linear-gradient(160deg,#3a6fa0,#102a44)"><em>8.3</em><b>Оппенгеймер</b></div>
+      <div class="poster" style="width:230px;height:340px;background:linear-gradient(160deg,#6a8a3a,#1f3012)"><em>8.6</em><b>Сёгун</b></div>
+      <div class="poster" style="width:230px;height:340px;background:linear-gradient(160deg,#a0703a,#3a2210)"><em>7.9</em><b>Пингвин</b></div>
+      <div class="poster" style="width:230px;height:340px;background:linear-gradient(160deg,#6a3aa0,#22104a)"><em>8.4</em><b>Фоллаут</b></div>
+      <div class="poster" style="width:230px;height:340px;background:linear-gradient(160deg,#3aa08a,#103a32)"><em>8.0</em><b>Андор</b></div>
+      <div class="poster" style="width:230px;height:340px;background:linear-gradient(160deg,#a03a3a,#401414)"><em>7.7</em><b>Игра в кальмара</b></div>
+    </div>
+  </div>
+</div>
+<script src="icons.js"></script>
+<script>document.querySelectorAll('i[data-i]').forEach((e) => { e.outerHTML = ic(e.dataset.i); });</script>
+</body>
+</html>

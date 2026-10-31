@@ -1,0 +1,18 @@
+:root { --bg:#070a12; --text:#eef1f8; --muted:rgba(238,241,248,.62); --glass:rgba(255,255,255,.07); --line:rgba(255,255,255,.12); --accent:#6e9bff; --accent2:#9b7bff; --good:#4cd37b; }
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'Inter', 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif; }
+.ic { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.screen { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
+.amb { position: absolute; border-radius: 50%; filter: blur(140px); }
+.chip { display: inline-flex; align-items: center; gap: 10px; padding: 10px 20px; border-radius: 99px; font-size: 22px; font-weight: 600; background: var(--glass); box-shadow: inset 0 0 0 1px var(--line); color: rgba(238,241,248,.85); backdrop-filter: blur(12px); }
+.chip .ic { font-size: 26px; }
+.chip.acc { background: linear-gradient(135deg, #6e9bff, #a24cf0); color: #fff; box-shadow: none; }
+.btn { display: inline-flex; align-items: center; gap: 14px; padding: 20px 36px; border-radius: 99px; font-size: 28px; font-weight: 700; background: rgba(255,255,255,.14); color: #fff; }
+.btn .ic { font-size: 32px; }
+.btn.p { background: linear-gradient(135deg, #6e9bff, #9b7bff); box-shadow: 0 16px 40px rgba(110,100,255,.45); }
+.bar { flex: none; height: 8px; border-radius: 4px; background: rgba(255,255,255,.2); }
+.bar i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, #6e9bff, #a78bff); }
+.poster { flex: none; border-radius: 22px; position: relative; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255,255,255,.1); }
+.poster b { position: absolute; left: 18px; right: 18px; bottom: 16px; font-size: 24px; font-weight: 700; line-height: 1.15; text-shadow: 0 2px 12px rgba(0,0,0,.6); }
+.poster em { position: absolute; left: 14px; top: 14px; font-style: normal; font-size: 20px; font-weight: 700; padding: 6px 12px; border-radius: 99px; background: rgba(8,11,20,.65); color: var(--good); }
+.label { font-size: 30px; font-weight: 700; letter-spacing: -.01em; }

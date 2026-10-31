@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Nova TV: главная, вариант A, прокручено к рядам</title>
+<link rel="stylesheet" href="common.css">
+<style>
+  .head { position: absolute; left: 96px; right: 96px; top: 40px; display: flex; align-items: center; gap: 40px; }
+  .clock { font-size: 44px; font-weight: 300; letter-spacing: -.02em; width: 140px; }
+  .tiles { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+  .tile { height: 84px; border-radius: 22px; display: flex; align-items: center; gap: 16px; padding: 0 26px; font-size: 26px; font-weight: 700; background: var(--glass); box-shadow: inset 0 0 0 1px var(--line); color: rgba(238,241,248,.88); }
+  .tile .ic { font-size: 36px; }
+  .mini { position: absolute; left: 96px; right: 96px; top: 150px; height: 84px; border-radius: 22px; display: flex; align-items: center; gap: 24px; padding: 0 28px; background: linear-gradient(90deg, #1b2766, #24317f 60%, #3b2a86); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); }
+  .mini .t { font-size: 28px; font-weight: 800; }
+  .mini .s { font-size: 22px; color: rgba(238,241,248,.75); }
+  .mini .bar { width: 220px; margin-left: auto; }
+  .mini .btn { padding: 12px 26px; font-size: 24px; }
+  .rail { position: absolute; left: 96px; right: 0; }
+  .rail .label { margin-bottom: 18px; display: flex; align-items: baseline; gap: 16px; }
+  .rail .label small { font-size: 22px; font-weight: 500; color: var(--muted); }
+  .row { display: flex; gap: 26px; }
+  .card { flex: none; width: 236px; }
+  .card .poster { width: 236px; height: 354px; }
+  .card .cap { margin-top: 12px; font-size: 24px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card .yr { font-size: 20px; color: var(--muted); margin-top: 2px; }
+  .card.on { transform: scale(1.07) translateY(-6px); transform-origin: top center; position: relative; z-index: 2; }
+  .card.on .poster { box-shadow: 0 0 0 6px #fff, 0 30px 70px rgba(110,155,255,.45); }
+</style>
+</head>
+<body>
+<div class="screen">
+  <div class="amb" style="left:-200px;top:-260px;width:900px;height:760px;background:#2447b8;opacity:.4"></div>
+  <div class="amb" style="right:-240px;top:300px;width:900px;height:760px;background:#6a30c0;opacity:.3"></div>
+
+  <div class="head">
+    <div class="clock">21:40</div>
+    <div class="tiles">
+      <div class="tile"><i data-i="play"></i>YouTube</div>
+      <div class="tile"><i data-i="film"></i>Фильмы</div>
+      <div class="tile"><i data-i="globe"></i>Браузер</div>
+      <div class="tile"><i data-i="sliders"></i>Настройки</div>
+      <div class="tile"><i data-i="power"></i>Выход</div>
+    </div>
+  </div>
+
+  <div class="mini">
+    <span class="t">Бесстыжие</span><span class="s">Сезон 3 · серия 3 · осталось 30 минут</span>
+    <div class="bar"><i style="width:42%"></i></div>
+    <span class="btn p"><i data-i="play"></i>Продолжить</span>
+  </div>
+
+  <div class="rail" style="top:270px">
+    <div class="label">Новинки <small>фильмы и сериалы этого года</small></div>
+    <div class="row">
+      <div class="card"><div class="poster" style="background:linear-gradient(160deg,#9b3a62,#3a1530)"><em>8.2</em></div><div class="cap">Дюна: Часть вторая</div><div class="yr">2024</div></div>
+      <div class="card"><div class="poster" style="background:linear-gradient(160deg,#3a6fa0,#102a44)"><em>8.3</em></div><div class="cap">Оппенгеймер</div><div class="yr">2023</div></div>
+      <div class="card on"><div class="poster" style="background:linear-gradient(160deg,#6a8a3a,#1f3012)"><em>8.6</em></div><div class="cap">Сёгун</div><div class="yr">2024 · сериал</div></div>
+      <div class="card"><div class="poster" style="background:linear-gradient(160deg,#a0703a,#3a2210)"><em>7.9</em></div><div class="cap">Пингвин</div><div class="yr">2024 · сериал</div></div>
+      <div class="card"><div class="poster" style="background:linear-gradient(160deg,#6a3aa0,#22104a)"><em>8.4</em></div><div class="cap">Фоллаут</div><div class="yr">2024 · сериал</div></div>
+      <div class="card"><div class="poster" style="background:linear-gradient(160deg,#3aa08a,#103a32)"><em>8.0</em></div><div class="cap">Андор</div><div class="yr">2022 · сериал</div></div>
+      <div class="card"><div class="poster" style="background:linear-gradient(160deg,#a03a3a,#401414)"><em>7.7</em></div><div class="cap">Игра в кальмара</div><div class="yr">2021 · сериал</div></div>
+    </div>
+  </div>
+
+  <div class="rail" style="top:812px">
+    <div class="label">Рекомендуем <small>по вашим просмотрам</small></div>
+    <div class="row">
+      <div class="card"><div class="poster" style="background:linear-gradient(160deg,#3a5aa0,#101a44)"><em>8.8</em></div></div>
+      <div class="card"><div class="poster" style="background:linear-gradient(160deg,#a04a6a,#401428)"><em>8.6</em></div></div>
+      <div class="card"><div class="poster" style="background:linear-gradient(160deg,#6a6a3a,#2a2a12)"><em>8.5</em></div></div>
+      <div class="card"><div class="poster" style="background:linear-gradient(160deg,#3a8aa0,#103644)"><em>9.0</em></div></div>
+      <div class="card"><div class="poster" style="background:linear-gradient(160deg,#8a3aa0,#34104a)"><em>8.7</em></div></div>
+      <div class="card"><div class="poster" style="background:linear-gradient(160deg,#a08a3a,#443612)"><em>8.9</em></div></div>
+      <div class="card"><div class="poster" style="background:linear-gradient(160deg,#3aa05a,#10441e)"><em>8.5</em></div></div>
+    </div>
+  </div>
+</div>
+<script src="icons.js"></script>
+<script>document.querySelectorAll('i[data-i]').forEach((e) => { e.outerHTML = ic(e.dataset.i); });</script>
+</body>
+</html>
