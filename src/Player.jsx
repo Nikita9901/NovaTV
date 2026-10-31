@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { attachStream } from './mse.js';
+import PlayerStats from './PlayerStats.jsx';
 
 const fmt = (s) => {
   s = Math.max(0, Math.floor(s));
@@ -50,6 +51,7 @@ export default function Player({ info, title, startAt = 0, onProgress, onNext, o
   const target = useRef(null); // накопленная цель перемотки
   const volume = useRef(1);
   const [net, setNet] = useState(null); // сколько загружено вперёд
+  const [statsOn, setStatsOn] = useState(() => localStorage.getItem('player-stats') === '1'); // статистика плавности по клавише I
   const [menu, setMenu] = useState(null); // меню выбора озвучки: null — закрыто, число — выбранная строка
   const menuRef = useRef(null);
   menuRef.current = menu;
@@ -223,6 +225,11 @@ export default function Player({ info, title, startAt = 0, onProgress, onNext, o
           return wake();
         }
         case 'skip': return ctrl.current.showIntro ? ctrl.current.skipIntro() : undefined;
+        case 'stats':
+          return setStatsOn((on) => {
+            localStorage.setItem('player-stats', on ? '0' : '1');
+            return !on;
+          });
         default:
       }
     };
@@ -230,7 +237,7 @@ export default function Player({ info, title, startAt = 0, onProgress, onNext, o
     const onKey = (e) => {
       const byKey = { ' ': 'a', Enter: 'a', Tab: 'start', ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down', PageUp: 'lb', PageDown: 'rb' };
       // A — озвучка, N — следующая серия (физические клавиши: на русской раскладке это Ф и Т)
-      const byCode = { KeyA: 'x', KeyN: 'y', KeyS: 'skip' };
+      const byCode = { KeyA: 'x', KeyN: 'y', KeyS: 'skip', KeyI: 'stats' };
       const action = byKey[e.key] || byCode[e.code];
       if (action) {
         e.preventDefault();
@@ -402,6 +409,8 @@ export default function Player({ info, title, startAt = 0, onProgress, onNext, o
         </div>
       )}
 
+      {statsOn && <PlayerStats video={video} mode={info.mode} net={net} />}
+
       {waiting && !error && <div className="spinner" />}
       {error && <div className="perror">{error}</div>}
 
@@ -437,7 +446,7 @@ export default function Player({ info, title, startAt = 0, onProgress, onNext, o
             </div>
             <span className="time">{fmt(duration)}</span>
           </div>
-          <div className="keys">Пробел/Ⓐ Пауза · ◀ ▶ ±10с · PgUp/PgDn ±1м · ▲▼ Громкость · A/Ⓧ Озвучка · {hasNext ? 'N/Ⓨ Следующая серия · ' : ''}{episode ? 'S Заставка · ' : ''}Start/Tab Меню · Esc/Ⓑ Выход</div>
+          <div className="keys">Пробел/Ⓐ Пауза · ◀ ▶ ±10с · PgUp/PgDn ±1м · ▲▼ Громкость · A/Ⓧ Озвучка · {hasNext ? 'N/Ⓨ Следующая серия · ' : ''}{episode ? 'S Заставка · ' : ''}Start/Tab Меню · I Статистика · Esc/Ⓑ Выход</div>
         </div>
       </div>
     </div>

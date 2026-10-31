@@ -677,3 +677,9 @@ body[data-player] .toast { display: none; }
 .resume-pill kbd { color: #fff; background: rgba(255, 255, 255, 0.2); border-color: rgba(255, 255, 255, 0.3); }
 .resume-pill:focus { background: #fff; color: #0b0e17; box-shadow: 0 0 0 0.45vh #6e9bff, 0 2vh 6vh rgba(110, 155, 255, 0.55); }
 .resume-pill:focus kbd { color: #0b0e17; background: rgba(0, 0, 0, 0.08); border-color: rgba(0, 0, 0, 0.18); }
+
+/* Статистика воспроизведения (клавиша I) */
+.pstats { position: absolute; z-index: 6; left: 2vw; top: 3vh; display: flex; flex-direction: column; gap: 0.5vh; padding: 1.4vh 1.2vw; border-radius: 1.4vh; font: 1.7vh/1.3 Consolas, 'Cascadia Mono', monospace; color: #e8ecf8; background: rgba(5, 8, 15, 0.78); box-shadow: inset 0 0 0 1px var(--line); pointer-events: none; }
+.pstats b { color: #9bb6ff; font-weight: 600; margin-right: 0.6vh; }
+.pstats .ok { color: #7ff0a8; }
+.pstats .bad { color: #ffb36b; }
