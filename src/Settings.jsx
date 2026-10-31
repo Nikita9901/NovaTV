@@ -496,6 +496,17 @@ export default function Settings({ onBack, say }) {
               loadCache();
             })}
           />
+          <Action
+            title="Сбросить вкус для подбора"
+            sub="Забывает ваши ответы в «Подобрать фильм / сериал»; подбор начнётся с чистого листа"
+            value={confirm === 'taste' ? 'Нажмите ещё раз' : ''}
+            icon="refresh"
+            danger={confirm === 'taste'}
+            onClick={confirmed('taste', async () => {
+              const r = await window.tv.pickReset();
+              say(r.ok ? 'Вкус сброшен' : 'Не удалось сбросить');
+            })}
+          />
         </section>
 
         <section className="set-group">
