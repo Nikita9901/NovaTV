@@ -43,6 +43,18 @@ const REGIONS = [
   { v: 'all', label: 'Мировые оценки' },
   { v: 'foreign', label: 'Без российских' },
 ];
+const CACHE_DAYS = [
+  { v: 3, label: '3 дня' },
+  { v: 7, label: 'Неделя' },
+  { v: 14, label: '2 недели' },
+  { v: 30, label: 'Месяц' },
+];
+const CACHE_SIZES = [
+  { v: 20, label: '20 ГБ' },
+  { v: 50, label: '50 ГБ' },
+  { v: 100, label: '100 ГБ' },
+  { v: 250, label: '250 ГБ' },
+];
 const HEIGHTS = [
   { v: 720, label: '720p' },
   { v: 1080, label: '1080p' },
@@ -106,6 +118,8 @@ export default function Settings({ onBack, say }) {
   const [draft, setDraft] = useState('');
   const [reveal, setReveal] = useState(false);
   const [remote, setRemote] = useState(null); // состояние сервера для телефона-пульта
+  const [cache, setCache] = useState(null); // сколько сейчас занимает сохранённое для просмотра
+  const loadCache = () => window.tv.cacheInfo?.().then((r) => r?.ok && setCache(r.data));
   const [about, setAbout] = useState(null);
   const [update, setUpdate] = useState(null); // результат проверки обновлений
   const [checking, setChecking] = useState(false);
@@ -131,6 +145,7 @@ export default function Settings({ onBack, say }) {
 
   useEffect(() => {
     window.tv.about?.info().then(setAbout);
+    loadCache();
     const load = () => window.tv.remote?.status().then((r) => r.ok && setRemote(r.data));
     load();
     return window.tv.remote?.onChanged(load);
@@ -455,15 +470,30 @@ export default function Settings({ onBack, say }) {
               )}
             </span>
           </div>
+          <Choice
+            title="Хранить скачанное"
+            sub="Уже загруженное остаётся, поэтому «Продолжить просмотр» на следующий день не качает заново. Удаляется, если фильм или сериал не открывали так долго"
+            value={s.cacheDays || 14}
+            options={CACHE_DAYS}
+            onChange={(v) => save({ cacheDays: v })}
+          />
+          <Choice
+            title="Размер кэша"
+            sub="Если места не хватает, первым удаляется то, что смотрели давнее всего"
+            value={s.cacheMaxGB || 50}
+            options={CACHE_SIZES}
+            onChange={(v) => save({ cacheMaxGB: v })}
+          />
           <Action
             title="Очистить кэш загрузок"
-            sub="Удаляет недокачанные файлы просмотренных фильмов"
+            sub={cache ? `Сейчас сохранено: ${fmtGB(cache.bytes)} (раздач: ${cache.items}). После очистки «Продолжить» придётся качать заново` : 'Удаляет всё скачанное для просмотра'}
             value={confirm === 'cache' ? 'Нажмите ещё раз' : ''}
             icon="trash"
             danger={confirm === 'cache'}
             onClick={confirmed('cache', async () => {
               const r = await window.tv.clearCache();
               say(r.ok ? 'Кэш очищен' : 'Не удалось очистить кэш');
+              loadCache();
             })}
           />
         </section>

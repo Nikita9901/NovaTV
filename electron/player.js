@@ -35,13 +35,124 @@ class PlayError extends Error {}
 
 const gb = (n) => `${(n / 1e9).toFixed(1)} ГБ`;
 
-// Папка кэша — только наша: чистим её при старте и после просмотра.
+// Папка кэша — только наша. Внутри по папке на каждую раздачу (имя — её хэш): скачанное остаётся между просмотрами,
+// поэтому «Продолжить» на следующий день не качает заново. Устаревшее удаляем (см. evictCache).
 function cacheDir() {
   const custom = loadSettings().downloadDir?.trim();
   return path.join(custom || defaultDownloads(), 'google-tv-torrents');
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// ---------- кэш раздач ----------
+const STATE_FILE = '.novatv-state.json';
+const TORRENT_FILE = '.novatv.torrent';
+const HASH_DIR = /^[0-9a-f]{40}$/;
+const dirFor = (infoHash) => path.join(cacheDir(), infoHash);
+
+function readState(dir) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(dir, STATE_FILE), 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+// Какие куски уже скачаны, и когда раздачей пользовались в последний раз. По этому же файлу при следующем просмотре
+// WebTorrent не пересчитывает хэши всего файла, а берёт готовую карту кусков (выборочно проверяя её).
+function saveState(me) {
+  const t = me?.torrent;
+  if (!me?.persist || !t?.ready || !t.bitfield) return;
+  try {
+    let have = 0;
+    for (let i = 0; i < t.pieces.length; i++) if (t.bitfield.get(i)) have++;
+    fs.mkdirSync(me.dir, { recursive: true });
+    // Сам торрент-файл тоже храним: по одной магнит-ссылке метаданные пришлось бы снова искать у раздающих
+    const tf = path.join(me.dir, TORRENT_FILE);
+    if (t.torrentFile && !fs.existsSync(tf)) fs.writeFileSync(tf, t.torrentFile);
+    fs.writeFileSync(
+      path.join(me.dir, STATE_FILE),
+      JSON.stringify({
+        infoHash: me.infoHash,
+        name: t.name,
+        pieceLength: t.pieceLength,
+        bytes: Math.min(t.length, have * t.pieceLength),
+        lastAccess: Date.now(),
+        bitfield: Buffer.from(t.bitfield.buffer).toString('base64'),
+      }),
+    );
+  } catch (err) {
+    console.warn('[cache] не удалось сохранить состояние:', err.message);
+  }
+}
+
+const removeDir = (dir) => {
+  try {
+    fs.rmSync(dir, { recursive: true, force: true });
+    return true;
+  } catch (err) {
+    console.warn('[cache] не удалось удалить', dir, err.message); // файлы могут быть заняты — не критично
+    return false;
+  }
+};
+
+// Удаляем то, чем давно не пользовались, и следим за общим размером (сначала самое давнее). Раздачу в просмотре не трогаем.
+function evictCache(keepHash = session?.infoHash) {
+  const root = cacheDir();
+  if (!fs.existsSync(root)) return;
+  const { cacheDays, cacheMaxGB } = loadSettings();
+  const items = [];
+  for (const name of fs.readdirSync(root)) {
+    const dir = path.join(root, name);
+    let st;
+    try {
+      st = fs.statSync(dir);
+    } catch {
+      continue;
+    }
+    if (!st.isDirectory()) continue;
+    if (!HASH_DIR.test(name)) {
+      if (name !== keepHash) removeDir(dir); // остатки прежней схемы (папки сессий) и временные папки
+      continue;
+    }
+    const state = readState(dir);
+    items.push({ dir, name, last: state?.lastAccess || st.mtimeMs, bytes: state?.bytes ?? 0 });
+  }
+  const limit = Date.now() - (cacheDays || 14) * 86400e3;
+  let kept = [];
+  for (const it of items) {
+    if (it.name !== keepHash && it.last < limit) {
+      console.log(`[cache] удаляем давнюю раздачу ${it.name.slice(0, 8)} (${gb(it.bytes)})`);
+      removeDir(it.dir);
+    } else kept.push(it);
+  }
+  const max = (cacheMaxGB || 50) * 1e9;
+  let total = kept.reduce((n, it) => n + it.bytes, 0);
+  kept = kept.sort((a, b) => a.last - b.last);
+  for (const it of kept) {
+    if (total <= max) break;
+    if (it.name === keepHash) continue;
+    console.log(`[cache] кэш больше ${cacheMaxGB} ГБ: удаляем ${it.name.slice(0, 8)} (${gb(it.bytes)})`);
+    if (removeDir(it.dir)) total -= it.bytes;
+  }
+}
+
+function cacheInfo() {
+  const root = cacheDir();
+  let bytes = 0;
+  let items = 0;
+  try {
+    for (const name of fs.readdirSync(root)) {
+      if (!HASH_DIR.test(name)) continue;
+      const state = readState(path.join(root, name));
+      bytes += state?.bytes ?? 0;
+      items++;
+    }
+  } catch {
+    /* папки ещё нет */
+  }
+  return { bytes, items };
+}
 const mb = (n) => `${(n / 1e6).toFixed(0)} МБ`;
 
 async function ensureTorrentClient() {
@@ -285,7 +396,7 @@ async function ensureStreamServer() {
 // ---------- сессия ----------
 
 async function play(t, send) {
-  stop();
+  await stop(); // прежняя раздача должна полностью закрыться, иначе ту же самую нельзя добавить повторно
   const me = { torrent: null, file: null, srcUrl: '', info: null, externals: [], procs: new Set(), cancelled: false };
   session = me;
   const aborted = () => me.cancelled || session !== me;
@@ -295,11 +406,35 @@ async function play(t, send) {
   if (aborted()) return null;
 
   const wt = await ensureTorrentClient();
-  // Своя папка на каждый просмотр: остатки прошлого (файл может быть ещё занят процессом, который завершается) не мешают
-  const dir = path.join(cacheDir(), `s${Date.now()}`);
+  // Папка раздачи называется по её хэшу: тот же фильм или сериал в следующий раз найдёт уже скачанное.
+  // Если хэш узнать не удалось, качаем во временную папку и удаляем после просмотра.
+  try {
+    const { default: parseTorrent } = await import('parse-torrent');
+    me.infoHash = String((await parseTorrent(source)).infoHash || '').toLowerCase();
+  } catch {
+    me.infoHash = '';
+  }
+  me.persist = HASH_DIR.test(me.infoHash);
+  const dir = me.persist ? dirFor(me.infoHash) : path.join(cacheDir(), `tmp-${Date.now()}`);
   fs.mkdirSync(dir, { recursive: true });
   me.dir = dir;
-  me.torrent = wt.add(source, { path: dir, announce: TRACKERS });
+  const state = me.persist ? readState(dir) : null;
+  if (state) console.log(`[cache] найдено сохранённое: ${((state.bytes || 0) / 1e6).toFixed(0)} МБ, пользовались ${new Date(state.lastAccess).toLocaleString('ru-RU')}`);
+  // Раздача уже скачивалась: берём её торрент-файл из кэша, тогда не нужны ни сиды, ни поиск метаданных, чтобы открыть сохранённое
+  let torrentSource = source;
+  if (me.persist) {
+    try {
+      torrentSource = fs.readFileSync(path.join(dir, TORRENT_FILE));
+    } catch {
+      /* ещё не сохраняли */
+    }
+  }
+  me.torrent = wt.add(torrentSource, {
+    path: dir,
+    announce: TRACKERS,
+    // сохранённая карта кусков: не пересчитываем хэши всего файла, а проверяем её выборочно
+    ...(state?.bitfield ? { bitfield: Buffer.from(state.bitfield, 'base64') } : {}),
+  });
   const torrent = me.torrent;
   // Файлы делаем разреженными ДО первой записи, иначе Windows заполнит нулями всё до места записи
   // (запись куска в конец 10-гигабайтного файла блокирует диск на минуты).
@@ -321,6 +456,9 @@ async function play(t, send) {
   const check = () => {
     if (failure) throw new PlayError(describeError(failure));
   };
+  // Периодически сохраняем карту кусков и время последнего просмотра (на случай, если приложение закроют внезапно)
+  me.saver = setInterval(() => saveState(me), 30_000);
+  torrent.once('ready', () => saveState(me));
 
   // 1. Метаданные
   const started = Date.now();
@@ -469,17 +607,40 @@ async function play(t, send) {
   };
 }
 
+let stopping = Promise.resolve();
+
+// Останавливает просмотр. Скачанное остаётся в кэше (если раздачу удалось опознать); возвращает обещание, когда торрент закрыт.
 function stop() {
   const s = session;
   session = null;
-  if (!s) return;
+  if (!s) return stopping;
   s.cancelled = true;
+  clearInterval(s.saver);
   for (const p of s.procs) p.kill();
-  try {
-    s.torrent?.destroy({ destroyStore: true });
-  } catch {}
-  // Пустую папку сессии убираем чуть позже, когда файлы уже удалены
-  if (s.dir) setTimeout(() => fs.rm(s.dir, { recursive: true, force: true }, () => {}), 5000);
+  saveState(s); // до закрытия: карта кусков ещё в памяти
+  stopping = new Promise((resolve) => {
+    let finished = false;
+    const done = () => {
+      if (finished) return;
+      finished = true;
+      if (!s.persist && s.dir) removeDir(s.dir);
+      try {
+        evictCache(null);
+      } catch (err) {
+        console.warn('[cache] очистка не удалась:', err.message);
+      }
+      resolve();
+    };
+    try {
+      // у уже закрытого торрента колбэк не вызывается, а страховочный таймер не даёт зависнуть следующему просмотру
+      if (!s.torrent || s.torrent.destroyed) return done();
+      setTimeout(done, 5000);
+      s.torrent.destroy({ destroyStore: !s.persist }, done);
+    } catch {
+      done();
+    }
+  });
+  return stopping;
 }
 
 // Сколько фильма уже скачано впереди от позиции pos (секунды) — считаем непрерывные скачанные куски.
@@ -507,11 +668,11 @@ function bufferAhead(pos) {
 }
 
 function registerPlayer(getWin) {
-  // Остатки прошлых запусков (сбои, закрытие приложения во время просмотра)
+  // При запуске убираем только давнее и лишнее: недавно скачанное остаётся для «Продолжить просмотр»
   try {
-    fs.rmSync(cacheDir(), { recursive: true, force: true });
+    evictCache(null);
   } catch (err) {
-    console.warn('[cache] не удалось очистить кэш:', err.message); // файлы могут быть заняты — не критично
+    console.warn('[cache] очистка не удалась:', err.message);
   }
 
   const send = (payload) => getWin()?.webContents.send('player:status', payload);
@@ -527,7 +688,7 @@ function registerPlayer(getWin) {
   });
   ipcMain.on('player:stop', stop);
   ipcMain.handle('cache:clear', async () => {
-    stop();
+    await stop();
     try {
       fs.rmSync(cacheDir(), { recursive: true, force: true });
       return { ok: true };
@@ -535,6 +696,7 @@ function registerPlayer(getWin) {
       return { ok: false, error: err.message };
     }
   });
+  ipcMain.handle('cache:info', () => ({ ok: true, data: cacheInfo() }));
   ipcMain.handle('player:buffer', (_e, pos) => bufferAhead(Number(pos) || 0));
   // Раз в 10 секунд плеер присылает статистику воспроизведения — пишем её в журнал вместе с нагрузкой главного процесса
   ipcMain.on('player:perf', (_e, p) => {

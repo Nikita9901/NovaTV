@@ -94,6 +94,7 @@ contextBridge.exposeInMainWorld('tv', {
   pickDir: () => ipcRenderer.invoke('settings:pick-dir'),
   diskInfo: (dir) => ipcRenderer.invoke('settings:disk', dir),
   signOutYoutube: () => ipcRenderer.invoke('youtube:signout'),
+  cacheInfo: () => ipcRenderer.invoke('cache:info'),
   clearCache: () => ipcRenderer.invoke('cache:clear'),
   clearProgress: (movieId) => ipcRenderer.invoke('progress:clear', movieId),
   getAllProgress: () => ipcRenderer.invoke('progress:all'),

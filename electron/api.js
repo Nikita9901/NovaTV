@@ -11,6 +11,8 @@ const DEFAULTS = {
   prowlarrUrl: 'http://127.0.0.1:9696',
   prowlarrKey: '',
   remoteEnabled: false, // пульт на телефоне (Nova TV Remote) включён
+  cacheDays: 14, // сколько дней хранить скачанное для «Продолжить просмотр», если раздачей не пользовались
+  cacheMaxGB: 50, // потолок размера такого кэша; при превышении удаляется самое давнее
   setupDone: false, // пройден ли мастер первого запуска
   prowlarrBuiltin: false, // искать через встроенный Prowlarr (скачивается и запускается самим приложением)
   audioLang: 'rus', // предпочитаемая звуковая дорожка: rus / eng / пусто — первая
@@ -496,6 +498,8 @@ const SCHEMA = {
   prowlarrKey: 'string',
   prowlarrBuiltin: 'boolean',
   setupDone: 'boolean',
+  cacheDays: 'number',
+  cacheMaxGB: 'number',
   remoteEnabled: 'boolean',
   downloadDir: 'string',
   audioLang: 'string',
