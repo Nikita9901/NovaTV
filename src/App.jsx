@@ -66,6 +66,12 @@ export default function App() {
   }, []);
 
   // Новая версия: при запуске спрашиваем, ставить ли. «Пропустить» запоминает версию, «Позже» — до следующего запуска.
+  // Просмотр можно свернуть (Start в плеере): меню, настройки и поиск доступны, а на паузе стоит фильм
+  const [playback, setPlayback] = useState(null); // название идущего просмотра или null
+  const playbackRef = useRef(null);
+  playbackRef.current = playback;
+  const screenRef = useRef(screen);
+  screenRef.current = screen;
   const [update, setUpdate] = useState(null);
   useEffect(() => {
     window.tv?.about?.checkUpdate().then((r) => {
@@ -99,7 +105,11 @@ export default function App() {
     // Одни и те же действия приходят от геймпада и от телефона-пульта
     const onAction = (a) => {
       if (a === 'b') window.dispatchEvent(new Event('tv:back'));
-      else if (a === 'home') setScreen('home'); // кнопка «домой» на телефоне
+      else if (a === 'home') {
+        // кнопка «домой» на телефоне: в плеере сворачивает просмотр, иначе открывает главную
+        if (document.body.dataset.player) window.dispatchEvent(new CustomEvent('tv:pad', { detail: 'start' }));
+        else setScreen('home');
+      } else if (a === 'start' && playbackRef.current && screenRef.current !== 'movies') setScreen('movies'); // Start вне плеера: вернуться к фильму
       else if (document.body.dataset.player) window.dispatchEvent(new CustomEvent('tv:pad', { detail: a }));
       else if (a === 'a') activate();
       else if (['up', 'down', 'left', 'right'].includes(a)) move(a);
@@ -161,25 +171,13 @@ export default function App() {
       <div className="ambient" />
       <main className="app" inert={!!update || undefined}>
         <ErrorBoundary resetKey={screen} onReset={() => setScreen('home')}>
-        {screen === 'setup' ? (
+        {screen === 'movies' ? null : screen === 'setup' ? (
           <div className="screen-wrap" key="setup">
             <Setup onDone={() => setScreen('home')} say={say} />
           </div>
         ) : screen === 'browser' ? (
           <div className="screen-wrap" key="browser">
             <Browser onBack={() => setScreen('home')} say={say} />
-          </div>
-        ) : screen === 'movies' ? (
-          <div className="screen-wrap" key="movies">
-            <Movies
-              onBack={() => setScreen('home')}
-              onSettings={() => setScreen('settings')}
-              onTrailer={(url) => {
-                trailerRef.current = true;
-                window.tv?.openYoutube(url);
-              }}
-              say={say}
-            />
           </div>
         ) : screen === 'settings' ? (
           <div className="screen-wrap" key="settings">
@@ -228,6 +226,33 @@ export default function App() {
               <span><kbd>F8</kbd> Звуки</span>
             </footer>
           </div>
+        )}
+
+        {(screen === 'movies' || playback) && (
+          <div className="screen-wrap" key="movies" hidden={screen !== 'movies'} inert={screen !== 'movies' || undefined}>
+            <Movies
+              active={screen === 'movies'}
+              onBack={() => setScreen('home')}
+              onSettings={() => setScreen('settings')}
+              onTrailer={(url) => {
+                trailerRef.current = true;
+                window.tv?.openYoutube(url);
+              }}
+              onPlayback={setPlayback}
+              onMinimize={() => setScreen('home')}
+              say={say}
+            />
+          </div>
+        )}
+
+        {playback && screen !== 'movies' && (
+          <button data-focusable className="resume-pill" onClick={() => setScreen('movies')}>
+            <Icon name="play" />
+            <span>
+              Вернуться к фильму <b>{playback}</b>
+            </span>
+            <kbd>Start</kbd>
+          </button>
         )}
 
         {toast && (

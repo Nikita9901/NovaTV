@@ -145,7 +145,10 @@ const snapshot = (m) => ({
   countries: m.countries,
 });
 
-export default function Movies({ onBack, onSettings, onTrailer, say }) {
+export default function Movies({ onBack, onSettings, onTrailer, say, active = true, onPlayback, onMinimize }) {
+  // Экран может быть скрыт, пока идёт свёрнутый просмотр: тогда он не должен реагировать на кнопки
+  const activeRef = useRef(active);
+  activeRef.current = active;
   const [view, setView] = useState('search'); // search | detail | torrents
   const [kbd, setKbd] = useState(true); // экранная клавиатура показана
   const [lang, setLang] = useState('ru');
@@ -300,10 +303,18 @@ export default function Movies({ onBack, onSettings, onTrailer, say }) {
   };
 
   // ---------- Назад: геймпад B / Esc ----------
+  // Приложение показывает «Вернуться к фильму», пока просмотр свёрнут
+  useEffect(() => {
+    const title = playing?.info && movie ? (playing.ctx ? `${movie.title} · ${epLabel(playing.ctx.season, playing.ctx.episode)}` : movie.title) : null;
+    onPlayback?.(title);
+  }, [!!playing?.info, playing?.ctx?.season, playing?.ctx?.episode]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => onPlayback?.(null), []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const stateRef = useRef();
   stateRef.current = { view, movie, playing, torrents, person };
   useEffect(() => {
     const back = () => {
+      if (!activeRef.current) return;
       sfx.back();
       const { view, movie, playing, torrents } = stateRef.current;
       if (playing) {
@@ -357,7 +368,7 @@ export default function Movies({ onBack, onSettings, onTrailer, say }) {
   }, [onBack]);
 
   // Вернулись из YouTube (трейлер) — возвращаем фокус на страницу фильма
-  useEffect(() => window.tv.onHome(() => focusSoon('[data-autofocus]', '[data-focusable]')), []);
+  useEffect(() => window.tv.onHome(() => activeRef.current && focusSoon('[data-autofocus]', '[data-focusable]')), []);
 
   // ---------- Статус воспроизведения из основного процесса ----------
   useEffect(
@@ -387,7 +398,7 @@ export default function Movies({ onBack, onSettings, onTrailer, say }) {
     if (view !== 'search') return;
     // Физическая клавиатура. Пробел всегда вводит пробел, а не нажимает выбранную кнопку.
     const onKey = (e) => {
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (!activeRef.current || e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key === ' ') {
         e.preventDefault();
         sfx.key();
@@ -408,6 +419,7 @@ export default function Movies({ onBack, onSettings, onTrailer, say }) {
     const onKeyUp = (e) => e.key === ' ' && e.preventDefault();
     // Кнопки геймпада: Y — спрятать/показать клавиатуру, X — убрать фильм из «Продолжить»
     const onPad = (e) => {
+      if (!activeRef.current) return;
       if (e.detail === 'y') toggleRef.current();
       else if (e.detail === 'x') {
         const id = document.activeElement?.dataset?.cid;
@@ -568,6 +580,7 @@ export default function Movies({ onBack, onSettings, onTrailer, say }) {
   useEffect(() => {
     if (view !== 'detail') return;
     const go = () => {
+      if (!activeRef.current) return;
       const d = document.activeElement?.dataset;
       if (d?.ep) manualRef.current({ season: Number(d.season), episode: Number(d.ep) });
     };
@@ -1003,6 +1016,8 @@ export default function Movies({ onBack, onSettings, onTrailer, say }) {
             startAt={playing.startAt}
             onProgress={(pos, dur) => saveProgress(playing.torrent, pos, dur, playing.ctx)}
             onNext={playNext}
+            onMinimize={onMinimize}
+            suspended={!active}
             episode={!!movie.isSeries && !!playing.ctx}
             hasNext={!!playing.info.next || !!nextEpisodeOf(playing.ctx)}
             onAudio={(a) => localStorage.setItem(AUDIO_KEY(movie.id), JSON.stringify({ title: a.title, lang: a.lang }))}

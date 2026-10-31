@@ -669,3 +669,11 @@ body[data-player] .toast { display: none; }
 .upd-ver small { color: var(--muted); font-size: 2vh; }
 .upd-ver.warn { color: #ffd873; }
 .upd-notes { margin: 0; padding-left: 2.4vh; display: flex; flex-direction: column; gap: 0.6vh; font-size: 2vh; color: var(--muted); }
+
+/* Свёрнутый просмотр: экран фильмов скрыт, но жив; поверх остальных экранов — кнопка возврата */
+[hidden] { display: none !important; }
+.resume-pill { position: fixed; z-index: 800; left: 50%; bottom: 5vh; transform: translateX(-50%); display: flex; align-items: center; gap: 1.4vh; max-width: 70vw; padding: 1.8vh 2.4vw; border-radius: 99px; font-size: 2.3vh; font-weight: 600; background: linear-gradient(135deg, #6e9bff, #a24cf0); color: #fff; box-shadow: 0 2vh 6vh rgba(110, 100, 255, 0.5); animation: rise 0.45s var(--ease) backwards; transition: filter 0.2s, box-shadow 0.2s; }
+.resume-pill span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.resume-pill kbd { color: #fff; background: rgba(255, 255, 255, 0.2); border-color: rgba(255, 255, 255, 0.3); }
+.resume-pill:focus { background: #fff; color: #0b0e17; box-shadow: 0 0 0 0.45vh #6e9bff, 0 2vh 6vh rgba(110, 155, 255, 0.55); }
+.resume-pill:focus kbd { color: #0b0e17; background: rgba(0, 0, 0, 0.08); border-color: rgba(0, 0, 0, 0.18); }

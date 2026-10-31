@@ -34,7 +34,7 @@ const INTRO_RE = /intro|opening|заставк|опенинг|вступлен|\
 const CREDITS_RE = /credits|ending|титры|эндинг|\bed\b/i;
 
 // episode — это серия сериала (есть смысл пропускать заставку); hasNext — есть следующая серия
-export default function Player({ info, title, startAt = 0, onProgress, onNext, onAudio, episode = false, hasNext = false }) {
+export default function Player({ info, title, startAt = 0, onProgress, onNext, onAudio, onMinimize, suspended = false, episode = false, hasNext = false }) {
   const { base, duration, audios } = info;
   const video = useRef(null);
   const [start, setStart] = useState(Math.floor(startAt)); // с какой секунды запущен текущий поток
@@ -171,14 +171,31 @@ export default function Player({ info, title, startAt = 0, onProgress, onNext, o
   const remaining = duration - pos;
   const showNext = hasNext && menu === null && !showIntro && pos >= nextAt && remaining > 0.5;
 
+  // Просмотр свёрнули (открыли меню, настройки, поиск): ставим на паузу, а при возвращении сами продолжаем, если шло воспроизведение
+  const resumeAfter = useRef(false);
+  useEffect(() => {
+    const v = video.current;
+    if (suspended) {
+      resumeAfter.current = !!v && !v.paused;
+      v?.pause();
+      delete document.body.dataset.player; // пока свёрнуто, остальные экраны управляются как обычно
+    } else {
+      document.body.dataset.player = '1';
+      if (resumeAfter.current) v?.play().catch(() => {});
+      resumeAfter.current = false;
+      wake();
+    }
+  }, [suspended]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Свежие значения для обработчиков клавиш (они подписываются один раз)
   const ctrl = useRef({});
-  ctrl.current = { showIntro, skipIntro, hasNext, onNext };
+  ctrl.current = { showIntro, skipIntro, hasNext, onNext, onMinimize, suspended };
 
   // Геймпад и клавиатура
   useEffect(() => {
-    document.body.dataset.player = '1';
+    if (!ctrl.current.suspended) document.body.dataset.player = '1'; // свёрнутый просмотр флаг не ставит
     const act = (a) => {
+      if (ctrl.current.suspended) return; // просмотр свёрнут: кнопки принадлежат меню приложения
       // Пока открыто меню озвучки, кнопки управляют только им
       if (menuRef.current !== null) {
         if (a === 'up') setMenu((m) => Math.max(0, m - 1));
@@ -189,7 +206,8 @@ export default function Player({ info, title, startAt = 0, onProgress, onNext, o
       }
       switch (a) {
         case 'a': return togglePause();
-        case 'start': return togglePause();
+        // Start / Tab: свернуть просмотр и открыть меню приложения (фильм встаёт на паузу и ждёт)
+        case 'start': return ctrl.current.onMinimize ? ctrl.current.onMinimize() : togglePause();
         case 'left': return seekBy(-SEEK_STEP);
         case 'right': return seekBy(SEEK_STEP);
         case 'lb': return seekBy(-SEEK_BIG);
@@ -210,7 +228,7 @@ export default function Player({ info, title, startAt = 0, onProgress, onNext, o
     };
     const onPad = (e) => act(e.detail);
     const onKey = (e) => {
-      const byKey = { ' ': 'a', Enter: 'a', ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down', PageUp: 'lb', PageDown: 'rb' };
+      const byKey = { ' ': 'a', Enter: 'a', Tab: 'start', ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down', PageUp: 'lb', PageDown: 'rb' };
       // A — озвучка, N — следующая серия (физические клавиши: на русской раскладке это Ф и Т)
       const byCode = { KeyA: 'x', KeyN: 'y', KeyS: 'skip' };
       const action = byKey[e.key] || byCode[e.code];
@@ -230,7 +248,7 @@ export default function Player({ info, title, startAt = 0, onProgress, onNext, o
 
   useEffect(() => {
     const closeMenu = (e) => {
-      if (menuRef.current === null) return;
+      if (menuRef.current === null || ctrl.current.suspended) return;
       e.stopImmediatePropagation();
       e.preventDefault?.();
       setMenu(null);
@@ -419,7 +437,7 @@ export default function Player({ info, title, startAt = 0, onProgress, onNext, o
             </div>
             <span className="time">{fmt(duration)}</span>
           </div>
-          <div className="keys">Пробел/Ⓐ Пауза · ◀ ▶ ±10с · PgUp/PgDn ±1м · ▲▼ Громкость · A/Ⓧ Озвучка · {hasNext ? 'N/Ⓨ Следующая серия · ' : ''}{episode ? 'S Заставка · ' : ''}Esc/Ⓑ Выход</div>
+          <div className="keys">Пробел/Ⓐ Пауза · ◀ ▶ ±10с · PgUp/PgDn ±1м · ▲▼ Громкость · A/Ⓧ Озвучка · {hasNext ? 'N/Ⓨ Следующая серия · ' : ''}{episode ? 'S Заставка · ' : ''}Start/Tab Меню · Esc/Ⓑ Выход</div>
         </div>
       </div>
     </div>
