@@ -4,6 +4,12 @@ import { sfx } from './sounds.js';
 
 const ANSWER = { left: 'skip', right: 'like', watch: 'watch' };
 
+// Длинное описание листается вверх/вниз
+const scrollDescr = (dir) => {
+  const el = document.querySelector('.pk-descr');
+  if (el) el.scrollBy({ top: dir * el.clientHeight * 0.7, behavior: 'smooth' });
+};
+
 // Подбор по вкусу: карточки с постером, описанием и актёрами. ← не нравится, → интересно, но не сейчас, Enter / Ⓐ — смотреть.
 export default function Picker({ kind, onWatch }) {
   const [queue, setQueue] = useState([]);
@@ -73,6 +79,7 @@ export default function Picker({ kind, onWatch }) {
       if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         e.stopPropagation();
         e.preventDefault();
+        scrollDescr(e.key === 'ArrowDown' ? 1 : -1);
       } else if (map[e.key]) {
         e.stopPropagation();
         e.preventDefault();
@@ -82,6 +89,7 @@ export default function Picker({ kind, onWatch }) {
     const onPad = (e) => {
       const map = { left: 'left', right: 'right', a: 'watch' };
       if (map[e.detail]) answer(map[e.detail]);
+      else if (e.detail === 'up' || e.detail === 'down') scrollDescr(e.detail === 'down' ? 1 : -1);
     };
     window.addEventListener('keydown', onKey, true);
     window.addEventListener('tv:pad', onPad);
@@ -96,6 +104,14 @@ export default function Picker({ kind, onWatch }) {
   const m = { ...cur, ...(d || {}) };
   const cast = (d?.cast || []).slice(0, 6);
   const next = queue[1];
+  const [longDescr, setLongDescr] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const el = document.querySelector('.pk-descr');
+      setLongDescr(!!el && el.scrollHeight > el.clientHeight + 4);
+    }, 80);
+    return () => clearTimeout(t);
+  }, [cur?.id, d]);
 
   return (
     <div className="screen picker enter">
@@ -137,6 +153,7 @@ export default function Picker({ kind, onWatch }) {
                 ))}
               </div>
               <p className="pk-descr">{m.description || (d ? 'Описания нет.' : 'Загружаем описание…')}</p>
+              {longDescr && <p className="pk-more">↑ ↓ — листать описание</p>}
               {d?.directors?.length > 0 && (
                 <p className="crew">
                   Режиссёр: <b>{d.directors.map((p) => p.name).join(', ')}</b>
